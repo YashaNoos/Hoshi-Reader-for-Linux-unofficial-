@@ -1,7 +1,8 @@
 # makepkg output
-/src/
-/pkg/
-/hoshi-reader-linux/
+/arch/src/
+/arch/pkg/
+/arch/hoshi-reader-linux/
+/arch/build.log
 *.pkg.tar.zst
 *.pkg.tar.zst.sig
 *.log

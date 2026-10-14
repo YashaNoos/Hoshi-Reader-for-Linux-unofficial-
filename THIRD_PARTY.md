@@ -22,7 +22,7 @@ as well.
 
 The sherpa-onnx static library is downloaded from the official
 [sherpa-onnx releases](https://github.com/k2-fsa/sherpa-onnx/releases) at package build
-time and checked against a fixed SHA-256 in the [PKGBUILD](PKGBUILD).
+time and checked against a fixed SHA-256 in the [PKGBUILD](arch/PKGBUILD).
 
 Transitive Rust dependencies pulled in by these crates are listed, with exact versions,
 in `src-tauri/Cargo.lock` after the patches are applied.
@@ -33,4 +33,4 @@ Hoshi Reader Desktop is distributed under the GNU General Public License v3.0
 (`Cargo.toml` declares GPL-3.0-or-later). The patches in this repository are
 distributed under the same terms. The complete corresponding source of a build is:
 the upstream release tag named in the PKGBUILD, plus the patches in
-[`patches/`](patches).
+[`arch/`](arch).

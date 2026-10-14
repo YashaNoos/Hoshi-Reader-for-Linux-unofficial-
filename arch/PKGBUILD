@@ -23,14 +23,14 @@ provides=('hoshi-reader')
 conflicts=('hoshi-reader')
 options=('!lto')
 source=("$pkgname::git+$_upstream_url.git#tag=v$pkgver"
-        'patches/0001-linux-support.patch'
-        'patches/0002-linux-audio-loopback-server.patch'
-        'patches/0003-linux-japanese-vertical-text.patch'
-        'patches/0004-linux-desktop-file-dialog.patch'
-        'patches/0005-update-tauri-2.12-wayland-titlebar.patch'
-        'patches/0006-linux-sasayaki-transcription.patch'
-        'patches/0007-linux-wayland-context-menu.patch'
-        'patches/0008-linux-attribution-and-updater.patch'
+        '0001-linux-support.patch'
+        '0002-linux-audio-loopback-server.patch'
+        '0003-linux-japanese-vertical-text.patch'
+        '0004-linux-desktop-file-dialog.patch'
+        '0005-update-tauri-2.12-wayland-titlebar.patch'
+        '0006-linux-sasayaki-transcription.patch'
+        '0007-linux-wayland-context-menu.patch'
+        '0008-linux-attribution-and-updater.patch'
         # prebuilt static library for Sasayaki transcription; the Rust crate links it
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2")
 noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')

@@ -24,13 +24,13 @@ patches that make it build and run on Linux, plus the packaging to install it.
 
 ```sh
 git clone https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-.git
-cd Hoshi-Reader-for-Linux-unofficial-
+cd Hoshi-Reader-for-Linux-unofficial-/arch
 makepkg -si
 ```
 
 The first build takes about 10 minutes and a few GB of disk space and needs a network
 connection (it downloads upstream's source at the matching release tag, applies the
-patches in [`patches/`](patches), and fetches the Rust and Node dependencies).
+patches in [`arch/`](arch), and fetches the Rust and Node dependencies).
 
 ### Arch Linux: pre-built package
 
@@ -65,7 +65,7 @@ Please read these before installing.
   Google credentials that are not part of the public source, so a build from source
   cannot sign in. If you create your own Google Cloud OAuth client, you can build with
   `HOSHI_GOOGLE_CLIENT_ID` and `HOSHI_GOOGLE_CLIENT_SECRET` set (see the comment in the
-  [PKGBUILD](PKGBUILD)); sign-in tokens are kept in KWallet or GNOME Keyring. This path
+  [PKGBUILD](arch/PKGBUILD)); sign-in tokens are kept in KWallet or GNOME Keyring. This path
   is implemented but **has not been tested**. If you rely on syncing with the iOS or
   Android apps, this build is not for you yet.
 - **Sasayaki transcription** works, for Japanese audio only. On first use it downloads
@@ -85,7 +85,7 @@ Please read these before installing.
 
 ## What is different from upstream
 
-Each patch in [`patches/`](patches) is one self-contained change:
+Each patch in [`arch/`](arch) is one self-contained change:
 
 | Patch | What it does |
 |---|---|
