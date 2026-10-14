@@ -1,0 +1,103 @@
+diff --git a/src-tauri/src/appimage_theme.rs b/src-tauri/src/appimage_theme.rs
+new file mode 100644
+index 0000000..2e4fef6
+--- /dev/null
++++ b/src-tauri/src/appimage_theme.rs
+@@ -0,0 +1,35 @@
++//! AppImage only. linuxdeploy's GTK hook (apprun-hooks/linuxdeploy-plugin-gtk.sh) exports
++//! `GTK_THEME=Adwaita:<variant>` with the variant taken from the desktop's color scheme.
++//! A variant in GTK_THEME overrides `gtk-application-prefer-dark-theme`, which is what
++//! `Window::set_theme` changes, so the app's own Light/Dark setting never reaches WebKit:
++//! on a dark desktop, a book set to Light is drawn white on black (and the reverse).
++//!
++//! Keep the theme name, drop the variant, and remember the desktop's variant so the
++//! "System" setting can still follow the desktop (see `desktop_color_scheme`).
++
++use std::sync::OnceLock;
++
++static DESKTOP_DARK: OnceLock<bool> = OnceLock::new();
++
++/// Must run before GTK is initialised and before any other thread exists.
++pub fn init() {
++    if std::env::var_os("APPIMAGE").is_none() {
++        return;
++    }
++    let Ok(theme) = std::env::var("GTK_THEME") else {
++        return;
++    };
++    let Some((name, variant)) = theme.split_once(':') else {
++        return;
++    };
++    let _ = DESKTOP_DARK.set(variant == "dark");
++    // SAFETY: called at the start of run(), before GTK starts and before any thread is spawned.
++    unsafe { std::env::set_var("GTK_THEME", name) };
++}
++
++/// The desktop's color scheme as the AppImage hook saw it at launch, or `None` outside an
++/// AppImage (there GTK follows the desktop theme by itself).
++#[tauri::command]
++pub fn desktop_color_scheme() -> Option<&'static str> {
++    DESKTOP_DARK.get().map(|dark| if *dark { "dark" } else { "light" })
++}
+diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
+index 391aeb6..7701b94 100644
+--- a/src-tauri/src/lib.rs
++++ b/src-tauri/src/lib.rs
+@@ -1,6 +1,8 @@
+ pub type Fallible<T = ()> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
+ 
+ mod anki;
++#[cfg(target_os = "linux")]
++mod appimage_theme;
+ mod backup;
+ mod book;
+ mod clipboard;
+@@ -40,6 +42,8 @@ use dict::LookupState;
+ static EXITING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+ 
+ pub fn run() {
++    #[cfg(target_os = "linux")]
++    appimage_theme::init();
+     #[cfg(target_os = "macos")]
+     writing_tools::disable();
+     #[cfg(target_os = "macos")]
+@@ -158,6 +162,8 @@ pub fn run() {
+             transcriber::sasayaki_transcribe,
+             #[cfg(target_os = "linux")]
+             context_menu::popup_menu_at_pointer,
++            #[cfg(target_os = "linux")]
++            appimage_theme::desktop_color_scheme,
+             #[cfg(windows)]
+             media_controls::media_controls_metadata,
+             #[cfg(windows)]
+diff --git a/src/App.svelte b/src/App.svelte
+index 7bb562e..ce9108d 100644
+--- a/src/App.svelte
++++ b/src/App.svelte
+@@ -6,6 +6,7 @@
+   import { getCurrentWindow } from "@tauri-apps/api/window";
+   import { FolderCog } from "@lucide/svelte";
+   import { chromeOverride, chromeTheme } from "./lib/theme.svelte";
++  import { isLinux } from "./lib/platform";
+   import Bookshelf from "./lib/Bookshelf.svelte";
+   import DictionarySearch from "./lib/DictionarySearch.svelte";
+   import Statistics from "./lib/Statistics.svelte";
+@@ -98,10 +99,17 @@
+     if (errors.length) await message(errors.join("\n"), { title: "Error", kind: "error" });
+   }
+ 
++  // AppImage only: GTK no longer follows the desktop by itself there (see appimage_theme.rs),
++  // so "System" is passed on explicitly. null everywhere else.
++  let desktopScheme = $state<"light" | "dark" | null>(null);
++  if (isLinux) {
++    invoke<"light" | "dark" | null>("desktop_color_scheme").then((s) => (desktopScheme = s)).catch(() => {});
++  }
++
+   $effect(() => {
+     document.documentElement.dataset.theme = chromeTheme(!!current);
+     const scheme = chromeOverride();
+-    getCurrentWindow().setTheme(scheme);
++    getCurrentWindow().setTheme(scheme ?? desktopScheme);
+     invoke("set_menu_theme", { dark: scheme && scheme === "dark" });
+   });
+ 

@@ -33,6 +33,7 @@ source=("$pkgname::git+$_upstream_url.git#tag=v$pkgver"
         '0008-linux-attribution-and-updater.patch'
         '0009-linux-clipboard-monitor-reselect.patch'
         '0010-linux-clipboard-read-off-main-thread.patch'
+        '0011-linux-appimage-theme.patch'
         # prebuilt static library for Sasayaki transcription; the Rust crate links it
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2")
 noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
@@ -48,6 +49,7 @@ sha256sums=('SKIP'
             'b7d845ef4bf62d8beb6cdfc6cf5f6f34440a140eb231c909256f146bbf92207b'
             'a67b2c5f84c9cec03bff559df5a5105995e59fcf41f3be88cd849ef6bf166804'
             '1daf28728a3a43d7d5d2403cc7de902ae0374d2dd79c8a1f6b96ca837e679633'
+            '2c9dc953975b25e99ea292a43eff749009cccf447812a0624672f2fc92dbef96'
             'e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6')
 
 prepare() {

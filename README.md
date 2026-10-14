@@ -100,6 +100,7 @@ Each patch in [`arch/`](arch) is one self-contained change:
 | `0008-linux-attribution-and-updater` | Adds this build's components to the in-app attribution page and disables the updater on Linux. |
 | `0009-linux-clipboard-monitor-reselect` | Clipboard monitor no longer resets the dictionary pane to the first word when you click another word in the search text. |
 | `0010-linux-clipboard-read-off-main-thread` | Fixes a crash when copying text inside the app (for example from a definition) while the clipboard monitor is on. |
+| `0011-linux-appimage-theme` | AppImage only: the app's Light/Dark setting applies to books and the dictionary even when the desktop uses the other color scheme. No effect in the Arch package. |
 
 The compiler flags in the PKGBUILD work around newer GCC versions (15/16) breaking
 upstream's C++ dictionary engine because of missing standard `#include`s.
