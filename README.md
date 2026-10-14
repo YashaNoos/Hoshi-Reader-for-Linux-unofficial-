@@ -13,7 +13,7 @@ patches that make it build and run on Linux, plus the packaging to install it.
 | | |
 |---|---|
 | **Based on upstream** | v1.1.2 |
-| **Linux build revision** | 1.1.2-3 |
+| **Linux build revision** | 1.1.2-4 |
 | **Platform** | Linux x86_64 |
 | **Tested on** | Arch Linux, KDE Plasma (Wayland) |
 | **License** | GPL-3.0-or-later, same as upstream |
@@ -98,6 +98,7 @@ Each patch in [`arch/`](arch) is one self-contained change:
 | `0006-linux-sasayaki-transcription` | On-device Sasayaki transcription using sherpa-onnx and the ReazonSpeech model. |
 | `0007-linux-wayland-context-menu` | Right-click menus open at the pointer on Wayland. |
 | `0008-linux-attribution-and-updater` | Adds this build's components to the in-app attribution page and disables the updater on Linux. |
+| `0009-linux-clipboard-monitor-reselect` | Clipboard monitor no longer resets the dictionary pane to the first word when you click another word in the search text. |
 
 The compiler flags in the PKGBUILD work around newer GCC versions (15/16) breaking
 upstream's C++ dictionary engine because of missing standard `#include`s.
