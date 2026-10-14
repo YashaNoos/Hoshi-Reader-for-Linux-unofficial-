@@ -78,10 +78,6 @@ Please read these before installing.
 - **x86_64 only.**
 - **No in-app updates.** The updater is disabled on Linux; update through your package
   manager or the Releases page.
-- **Media keys and the desktop media widget** (play/pause for Sasayaki audiobooks): the
-  Windows build has a dedicated integration that is not ported. Whether the standard
-  browser media session works on Linux (KDE's media widget, keyboard media keys) has
-  **not been tested**.
 - **Clipboard monitor:** copying exactly the same text twice in a row is not looked up
   a second time (Linux has no clipboard change counter, so changes are detected by
   comparing the text). Copy anything else in between and it works.
