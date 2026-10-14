@@ -1,10 +1,10 @@
-name: Build Arch package
+name: Build packages
 
 # Builds the package in a clean Arch Linux container.
 #  - every push / pull request / manual run: build only (a check that the patches still
 #    apply and the app still compiles), the package is kept as a workflow artifact
 #  - pushing a tag like `1.1.2-2` (pkgver-pkgrel): also publishes a GitHub release with
-#    the .pkg.tar.zst and its SHA-256 checksum
+#    the .pkg.tar.zst, the experimental AppImage and their SHA-256 checksums
 
 on:
   push:
@@ -65,9 +65,111 @@ jobs:
             ${{ github.workspace }}/arch/*.pkg.tar.zst.sha256
           if-no-files-found: error
 
+  # Experimental AppImage for distributions other than Arch (Bazzite, Fedora, Ubuntu, ...).
+  # Built on Ubuntu 24.04 from the same upstream tag and the same patches as the Arch
+  # package, so it runs on any distribution with glibc 2.39 or newer. WebKitGTK, GTK and
+  # the GStreamer plugins are bundled, which is why the file is large (~175 MB).
+  appimage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that the tag matches the PKGBUILD
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          . ./arch/PKGBUILD
+          if [ "${GITHUB_REF_NAME}" != "${pkgver}-${pkgrel}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match pkgver-pkgrel (${pkgver}-${pkgrel})" >&2
+            exit 1
+          fi
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          # gcc-14: the dictionary engine needs std::ranges::to (GCC 14+)
+          # gstreamer plugins: bundled into the AppImage so audiobooks (mp3/m4b) play
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake pkg-config patchelf file wget bzip2 git xvfb dbus \
+            gcc-14 g++-14 \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev libxdo-dev \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Get upstream source and apply the patches
+        run: |
+          # version, upstream URL, sherpa-onnx archive and checksum all come from the PKGBUILD
+          . ./arch/PKGBUILD
+          git clone --depth 1 --branch "v${pkgver}" "${_upstream_url}.git" hoshi-src
+          for p in arch/*.patch; do
+            echo "Applying ${p##*/}"
+            git -C hoshi-src apply "$GITHUB_WORKSPACE/$p"
+          done
+          mkdir sherpa
+          curl -fsSL -o "sherpa/${source[-1]##*/}" "${source[-1]}"
+          echo "${sha256sums[-1]}  sherpa/${source[-1]##*/}" | sha256sum -c -
+          # the pnpm version upstream pins in package.json
+          pm=$(node -p "require('./hoshi-src/package.json').packageManager")
+          npm install -g "${pm%%+*}"
+          cd hoshi-src
+          pnpm install --frozen-lockfile
+
+      - name: Build the AppImage
+        run: |
+          set -o pipefail
+          . ./arch/PKGBUILD
+          cd hoshi-src
+          export CC=gcc-14 CXX=g++-14
+          export SHERPA_ONNX_ARCHIVE_DIR="$GITHUB_WORKSPACE/sherpa"
+          export CXXFLAGS="-include cstdint -include algorithm -include cstring -include memory -include string -include vector -include limits"
+          # the runner has no FUSE: let linuxdeploy (itself an AppImage) unpack and run
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          pnpm tauri build --bundles appimage \
+            --config '{"bundle":{"createUpdaterArtifacts":false,"linux":{"appimage":{"bundleMediaFramework":true}}}}' \
+            2>&1 | tee ../appimage-build.log
+          cd "$GITHUB_WORKSPACE"
+          out="Hoshi-Reader-for-Linux-${pkgver}-${pkgrel}-x86_64.AppImage"
+          mv hoshi-src/src-tauri/target/release/bundle/appimage/*.AppImage "$out"
+          sha256sum "$out" > "$out.sha256"
+          ls -l "$out"*
+
+      - name: Show the end of the build log as an annotation on failure
+        if: failure()
+        run: |
+          tail -n 30 "$GITHUB_WORKSPACE/appimage-build.log" 2>/dev/null | tr -d '\r' | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' > /tmp/tail.txt || true
+          echo "::error title=AppImage build failed::$(cat /tmp/tail.txt)"
+
+      # Starts the app for 25 seconds on a virtual X display. It only shows that the bundle
+      # launches and stays alive (all libraries found); it does not replace real testing.
+      - name: Smoke test (does the app start?)
+        continue-on-error: true
+        run: |
+          f=$(ls "$GITHUB_WORKSPACE"/Hoshi-Reader-for-Linux-*.AppImage)
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          rc=0
+          xvfb-run -a dbus-run-session -- timeout 25 "$f" > smoke.log 2>&1 || rc=$?
+          if [ "$rc" -eq 124 ]; then
+            echo "::notice title=Smoke test::The AppImage started and stayed running for 25 s"
+          else
+            echo "::warning title=Smoke test::The AppImage exited early with code $rc: $(tail -n 8 smoke.log | tr -d '\r' | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: |
+            ${{ github.workspace }}/Hoshi-Reader-for-Linux-*.AppImage
+            ${{ github.workspace }}/Hoshi-Reader-for-Linux-*.AppImage.sha256
+          if-no-files-found: error
+
   release:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build, appimage]
+    # the Arch package is published even if the experimental AppImage failed
+    if: ${{ !cancelled() && needs.build.result == 'success' && startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -75,12 +177,17 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: arch-package
+      - uses: actions/download-artifact@v4
+        if: needs.appimage.result == 'success'
+        with:
+          name: appimage
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          shopt -s nullglob
           gh release create "$GITHUB_REF_NAME" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Hoshi Reader for Linux $GITHUB_REF_NAME (unofficial)" \
-            --notes "Unofficial Linux build of Hoshi Reader Desktop. Arch Linux package; see the README for installation and the list of limitations. Verify with the .sha256 file, then install with \`sudo pacman -U\`." \
-            *.pkg.tar.zst *.pkg.tar.zst.sha256
+            --notes "Unofficial Linux build of Hoshi Reader Desktop. **Arch Linux:** package, see the README for installation and the list of limitations; verify with the .sha256 file, then install with \`sudo pacman -U\`. **Other distributions:** experimental AppImage (if attached), built on Ubuntu 24.04, needs glibc 2.39 or newer; verify with the .sha256 file, then \`chmod +x\` it and run it." \
+            *.pkg.tar.zst *.pkg.tar.zst.sha256 *.AppImage *.AppImage.sha256
