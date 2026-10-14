@@ -1,0 +1,93 @@
+# Unofficial Linux build of Hoshi Reader Desktop (upstream ships macOS/Windows only).
+# https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-
+# Maintainer: YashaNoos (https://github.com/YashaNoos)
+pkgname=hoshi-reader-linux
+pkgver=1.1.2
+pkgrel=3
+pkgdesc='Japanese EPUB reader with pop-up dictionary and Anki mining (unofficial Linux build)'
+arch=('x86_64')
+url='https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-'
+_upstream_url='https://github.com/Manhhao/Hoshi-Reader-Desktop'
+# Statically links sherpa-onnx (Apache-2.0) and ONNX Runtime (MIT) for transcription.
+license=('GPL-3.0-or-later' 'Apache-2.0' 'MIT')
+# gst-plugins-good/gst-libav: webkit2gtk only hard-depends on GStreamer *libs*; without
+# these decoders <audio> cannot play mp3/m4b/m4a (Sasayaki audiobooks).
+# noto-fonts-cjk: the reader's Japanese fonts on Linux (Noto Serif/Sans CJK JP); without a
+# Japanese font, fontconfig falls back to a Chinese one.
+depends=('webkit2gtk-4.1' 'gtk3' 'libsoup3' 'openssl' 'gst-plugins-good' 'gst-libav' 'noto-fonts-cjk')
+makedepends=('git' 'rust' 'nodejs' 'pnpm' 'cmake' 'gcc' 'pkgconf')
+optdepends=('xdg-desktop-portal-kde: KDE file dialog for importing books/subtitles/audio (any xdg-desktop-portal backend works)'
+            'kwallet: Secret Service provider, needed for Google Drive sync login'
+            'gnome-keyring: Secret Service provider, needed for Google Drive sync login')
+provides=('hoshi-reader')
+conflicts=('hoshi-reader')
+options=('!lto')
+source=("$pkgname::git+$_upstream_url.git#tag=v$pkgver"
+        'patches/0001-linux-support.patch'
+        'patches/0002-linux-audio-loopback-server.patch'
+        'patches/0003-linux-japanese-vertical-text.patch'
+        'patches/0004-linux-desktop-file-dialog.patch'
+        'patches/0005-update-tauri-2.12-wayland-titlebar.patch'
+        'patches/0006-linux-sasayaki-transcription.patch'
+        'patches/0007-linux-wayland-context-menu.patch'
+        'patches/0008-linux-attribution-and-updater.patch'
+        # prebuilt static library for Sasayaki transcription; the Rust crate links it
+        "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2")
+noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
+# Refresh the patch sums with `updpkgsums` after changing a patch.
+sha256sums=('SKIP'
+            '768f6141a34787add9253f8645c19096c0717699d8f20a74fa2fd2d7f7a3b99f'
+            '7e84134f5d034b1d567a70e4b1fb977db169e189a2a4c0cab60d79ed33fd17a7'
+            '7e9bbc475c9a3ef3b4ae9aaac9572b301601e33725fafc347876ba4382d40f89'
+            '8dcb418562d79a55b424461605c1ff247f0725edb9655b10da3108843aab4f7f'
+            '1541372f7df9e74c3f972ba69d6d6e88605abc47e5baa3bca1c7cf372c6e2954'
+            'cbfb785acaa4d47af30347e19b6504893baec07ca791a8104cc8fef5da895707'
+            '195263e7a2d959747d2a43baf32d51d54278f241d5345f6aedae45a407885f05'
+            'b7d845ef4bf62d8beb6cdfc6cf5f6f34440a140eb231c909256f146bbf92207b'
+            'e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6')
+
+prepare() {
+  cd "$pkgname"
+  local patch
+  for patch in "$srcdir"/*.patch; do
+    msg2 "Applying ${patch##*/}"
+    git apply "$patch"
+  done
+  pnpm install --frozen-lockfile
+  (cd src-tauri && cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')")
+}
+
+build() {
+  cd "$pkgname"
+  # sherpa-onnx static library (from source=()) instead of a download during the build
+  export SHERPA_ONNX_ARCHIVE_DIR="$srcdir"
+  # hoshidicts (C++ dictionary engine) relies on standard headers being included
+  # transitively; GCC 15/16 dropped that (e.g. 'uint8_t does not name a type').
+  # Force-include them until upstream adds the missing #includes.
+  export CXXFLAGS="$CXXFLAGS -include cstdint -include algorithm -include utility -include string -include string_view -include vector -include optional -include ranges -include filesystem -include map -include unordered_map"
+  # Google Drive sync needs your own OAuth client; uncomment to enable:
+  # export HOSHI_GOOGLE_CLIENT_ID=... HOSHI_GOOGLE_CLIENT_SECRET=...
+  # To build without Sasayaki transcription, append: -- --no-default-features
+  pnpm tauri build --no-bundle --config '{"bundle":{"createUpdaterArtifacts":false}}'
+}
+
+package() {
+  cd "$pkgname"
+  install -Dm755 src-tauri/target/release/hoshi-reader "$pkgdir/usr/bin/hoshi-reader"
+  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/hoshi-reader.desktop" <<'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=Hoshi Reader
+Comment=Japanese EPUB reader
+Exec=hoshi-reader
+Icon=hoshi-reader
+StartupWMClass=hoshi-reader
+Categories=Education;Literature;Viewer;
+MimeType=application/epub+zip;
+Terminal=false
+DESKTOP
+  install -Dm644 src-tauri/icons/32x32.png   "$pkgdir/usr/share/icons/hicolor/32x32/apps/hoshi-reader.png"
+  install -Dm644 src-tauri/icons/128x128.png "$pkgdir/usr/share/icons/hicolor/128x128/apps/hoshi-reader.png"
+  install -Dm644 src-tauri/icons/icon.png    "$pkgdir/usr/share/icons/hicolor/512x512/apps/hoshi-reader.png"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

@@ -1,0 +1,175 @@
+diff --git a/src-tauri/src/updater.rs b/src-tauri/src/updater.rs
+index 26c646c..79cccaa 100644
+--- a/src-tauri/src/updater.rs
++++ b/src-tauri/src/updater.rs
+@@ -1,8 +1,17 @@
++// The unofficial Linux build is not published through upstream's update feed (and
++// would replace a package-managed binary): updates come from the package manager or
++// the Linux releases page, so the updater commands are inert on Linux.
++#[cfg(not(target_os = "linux"))]
+ use serde_json::json;
++#[cfg(not(target_os = "linux"))]
+ use std::time::Duration;
+-use tauri::{AppHandle, Emitter};
++use tauri::AppHandle;
++#[cfg(not(target_os = "linux"))]
++use tauri::Emitter;
++#[cfg(not(target_os = "linux"))]
+ use tauri_plugin_updater::{Update, UpdaterExt};
+ 
++#[cfg(not(target_os = "linux"))]
+ async fn available(app: &AppHandle) -> Result<Option<Update>, String> {
+     app.updater()
+         .map_err(|error| error.to_string())?
+@@ -11,11 +20,25 @@ async fn available(app: &AppHandle) -> Result<Option<Update>, String> {
+         .map_err(|error| error.to_string())
+ }
+ 
++#[cfg(target_os = "linux")]
++#[tauri::command]
++pub async fn check_update(_app: AppHandle) -> Result<Option<String>, String> {
++    Ok(None)
++}
++
++#[cfg(target_os = "linux")]
++#[tauri::command]
++pub async fn install_update(_app: AppHandle) -> Result<(), String> {
++    Err("Updates are installed through your package manager".into())
++}
++
++#[cfg(not(target_os = "linux"))]
+ #[tauri::command]
+ pub async fn check_update(app: AppHandle) -> Result<Option<String>, String> {
+     Ok(available(&app).await?.map(|update| update.version))
+ }
+ 
++#[cfg(not(target_os = "linux"))]
+ #[tauri::command]
+ pub async fn install_update(app: AppHandle) -> Result<(), String> {
+     let Some(update) = available(&app).await? else {
+diff --git a/src/lib/About.svelte b/src/lib/About.svelte
+index bc5ab3f..8cc726c 100644
+--- a/src/lib/About.svelte
++++ b/src/lib/About.svelte
+@@ -3,10 +3,14 @@
+   import { invoke } from "@tauri-apps/api/core";
+   import { ExternalLink } from "@lucide/svelte";
+   import { aboutLicenses } from "./aboutLicenses";
++  import { aboutLicensesLinux } from "./aboutLicensesLinux";
++  import { isLinux } from "./platform";
+   import artwork from "../../src-tauri/icons/Hoshi.icon/Assets/Artwork.png";
+   import SettingsSection from "./SettingsSection.svelte";
+   import SettingRow from "./SettingRow.svelte";
+ 
++  const licenseSections = isLinux ? [...aboutLicenses, ...aboutLicensesLinux] : aboutLicenses;
++
+   let version = $state("");
+   getVersion().then((value) => (version = value));
+ 
+@@ -45,7 +49,9 @@
+       <p class="select-text text-sm text-base-content/60">Version {version}</p>
+     </div>
+     <SettingRow label="Updates">
+-      {#if updateVersion}
++      {#if isLinux}
++        <span class="text-sm text-base-content/60">Through your package manager or the Linux releases page</span>
++      {:else if updateVersion}
+         <button class="btn btn-primary btn-sm" disabled={update === "installing"} onclick={installUpdate}>{update === "installing" ? "Installing…" : `Install ${updateVersion}`}</button>
+       {:else}
+         <div class="flex items-center gap-3">
+@@ -58,6 +64,11 @@
+     <button class="flex items-center justify-between gap-4 text-left text-sm" onclick={() => openLink("https://github.com/Manhhao/Hoshi-Reader-Desktop")}>
+       <span>GitHub</span><ExternalLink class="size-4 text-base-content/60" />
+     </button>
++    {#if isLinux}
++      <button class="flex items-center justify-between gap-4 text-left text-sm" onclick={() => openLink("https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-")}>
++        <span>GitHub (unofficial Linux build)</span><ExternalLink class="size-4 text-base-content/60" />
++      </button>
++    {/if}
+   </div>
+ </div>
+ 
+@@ -68,7 +79,7 @@
+     <span class="hidden text-xs font-normal text-base-content/60 group-open:inline">Hide</span>
+   </summary>
+   <div class="flex flex-col gap-6 px-6 pb-6">
+-    {#each aboutLicenses as section (section.title)}
++    {#each licenseSections as section (section.title)}
+       <SettingsSection title={section.title} compact>
+         {#each section.entries as entry (entry.name)}
+           {#if entry.text}
+diff --git a/src/lib/aboutLicensesLinux.ts b/src/lib/aboutLicensesLinux.ts
+new file mode 100644
+index 0000000..1f6c57e
+--- /dev/null
++++ b/src/lib/aboutLicensesLinux.ts
+@@ -0,0 +1,69 @@
++// Shown on Linux builds only, in addition to aboutLicenses. These are the components the
++// unofficial Linux port adds (see THIRD_PARTY.md in the Linux repository for details).
++export const aboutLicensesLinux = [
++  {
++    "title": "Linux build",
++    "entries": [
++      {
++        "name": "Hoshi Reader for Linux (unofficial)",
++        "license": "GPL-3.0-or-later",
++        "url": "https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-",
++        "text": null
++      },
++      {
++        "name": "Hoshi Reader Android (Sasayaki transcription pipeline)",
++        "license": "GPL-3.0",
++        "url": "https://github.com/HuangAntimony/Hoshi-Reader-Android",
++        "text": null
++      },
++      {
++        "name": "ReazonSpeech k2 v2 (speech model, downloaded on first use)",
++        "license": "Apache-2.0",
++        "url": "https://huggingface.co/reazon-research/reazonspeech-k2-v2",
++        "text": null
++      },
++      {
++        "name": "sherpa-onnx",
++        "license": "Apache-2.0",
++        "url": "https://github.com/k2-fsa/sherpa-onnx",
++        "text": null
++      },
++      {
++        "name": "ONNX Runtime (in sherpa-onnx)",
++        "license": "MIT",
++        "url": "https://github.com/microsoft/onnxruntime",
++        "text": null
++      },
++      {
++        "name": "Symphonia",
++        "license": "MPL-2.0",
++        "url": "https://github.com/pdeljanov/Symphonia",
++        "text": null
++      },
++      {
++        "name": "similar",
++        "license": "Apache-2.0",
++        "url": "https://github.com/mitsuhiko/similar",
++        "text": null
++      },
++      {
++        "name": "arboard",
++        "license": "MIT OR Apache-2.0",
++        "url": "https://github.com/1Password/arboard",
++        "text": null
++      },
++      {
++        "name": "zbus-secret-service-keyring-store",
++        "license": "MIT OR Apache-2.0",
++        "url": "https://github.com/open-source-cooperative/zbus-secret-service-keyring-store",
++        "text": null
++      },
++      {
++        "name": "gtk-rs (gtk3-rs)",
++        "license": "MIT",
++        "url": "https://github.com/gtk-rs/gtk3-rs",
++        "text": null
++      }
++    ]
++  }
++];

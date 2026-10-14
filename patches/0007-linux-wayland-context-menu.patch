@@ -1,0 +1,174 @@
+diff --git a/src-tauri/Cargo.lock b/src-tauri/Cargo.lock
+index ee05904..f6a60a4 100644
+--- a/src-tauri/Cargo.lock
++++ b/src-tauri/Cargo.lock
+@@ -1932,6 +1932,7 @@ dependencies = [
+  "arboard",
+  "base64 0.23.1",
+  "chrono",
++ "gtk",
+  "hoshidicts",
+  "image",
+  "keyring-core",
+diff --git a/src-tauri/Cargo.toml b/src-tauri/Cargo.toml
+index 9d6b09c..5f7ad6b 100644
+--- a/src-tauri/Cargo.toml
++++ b/src-tauri/Cargo.toml
+@@ -56,6 +56,8 @@ sherpa-onnx = { version = "1.13.8", optional = true }
+ similar = { version = "2", optional = true }
+ zbus-secret-service-keyring-store = { version = "1", features = ["rt-async-io-crypto-rust"] }
+ arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"] }
++# Wayland: anchor context menus to our own window (see context_menu.rs)
++gtk = "0.18"
+ symphonia = { version = "0.5", default-features = false, features = ["aac", "alac", "flac", "isomp4", "mkv", "mp3", "ogg", "pcm", "vorbis", "wav"] }
+ 
+ [target.'cfg(windows)'.dependencies]
+diff --git a/src-tauri/src/context_menu.rs b/src-tauri/src/context_menu.rs
+new file mode 100644
+index 0000000..642ff36
+--- /dev/null
++++ b/src-tauri/src/context_menu.rs
+@@ -0,0 +1,43 @@
++// Linux: a context menu shown without a position is anchored by muda to the X11
++// root window. Wayland has no root window, so GTK cannot parent the popup
++// ("Couldn't map as window ... as popup because it doesn't have a parent") and
++// places it at the wrong spot. Read the pointer position relative to our own
++// window instead and anchor the menu there; this also works on X11.
++
++use std::sync::mpsc;
++
++use gtk::prelude::*;
++use tauri::menu::{ContextMenu, Menu};
++use tauri::{LogicalPosition, Manager, ResourceId, Runtime, Webview, Window};
++
++fn pointer_position<R: Runtime>(window: &Window<R>) -> Option<(i32, i32)> {
++    let gdk_window = window.gtk_window().ok()?.window()?;
++    let pointer = gdk_window.display().default_seat()?.pointer()?;
++    let (_, x, y, _) = gdk_window.device_position(&pointer);
++    Some((x, y))
++}
++
++#[tauri::command]
++pub async fn popup_menu_at_pointer<R: Runtime>(
++    webview: Webview<R>,
++    window: Window<R>,
++    rid: ResourceId,
++) -> Result<(), String> {
++    let menu = webview
++        .resources_table()
++        .get::<Menu<R>>(rid)
++        .map_err(|error| error.to_string())?;
++    let (sender, receiver) = mpsc::channel();
++    let target = window.clone();
++    window
++        .run_on_main_thread(move || {
++            sender.send(pointer_position(&target)).ok();
++        })
++        .map_err(|error| error.to_string())?;
++    let position = receiver.recv().ok().flatten();
++    match position {
++        Some((x, y)) => menu.popup_at(window, LogicalPosition::new(x as f64, y as f64)),
++        None => menu.popup(window),
++    }
++    .map_err(|error| error.to_string())
++}
+diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
+index 08b567f..391aeb6 100644
+--- a/src-tauri/src/lib.rs
++++ b/src-tauri/src/lib.rs
+@@ -4,6 +4,8 @@ mod anki;
+ mod backup;
+ mod book;
+ mod clipboard;
++#[cfg(target_os = "linux")]
++mod context_menu;
+ mod crash;
+ mod css;
+ mod dict;
+@@ -154,6 +156,8 @@ pub fn run() {
+             transcriber::sasayaki_pause_transcription,
+             #[cfg(any(target_os = "macos", all(target_os = "linux", feature = "transcription")))]
+             transcriber::sasayaki_transcribe,
++            #[cfg(target_os = "linux")]
++            context_menu::popup_menu_at_pointer,
+             #[cfg(windows)]
+             media_controls::media_controls_metadata,
+             #[cfg(windows)]
+diff --git a/src/lib/Bookshelf.svelte b/src/lib/Bookshelf.svelte
+index 685851a..cc113a8 100644
+--- a/src/lib/Bookshelf.svelte
++++ b/src/lib/Bookshelf.svelte
+@@ -6,6 +6,7 @@
+   import { invoke } from "@tauri-apps/api/core";
+   import { listen } from "@tauri-apps/api/event";
+   import { Menu, Submenu, type MenuOptions } from "@tauri-apps/api/menu";
++  import { showContextMenu } from "./contextMenu";
+   import { ask, message } from "@tauri-apps/plugin-dialog";
+   import {
+     ArrowDown,
+@@ -187,7 +188,7 @@
+ 
+   async function popupMenu(items: MenuOptions["items"]) {
+     const menu = await Menu.new({ items });
+-    await menu.popup();
++    await showContextMenu(menu);
+   }
+ 
+   async function moveTo(ids: string[], name: string | null) {
+diff --git a/src/lib/Popup.svelte b/src/lib/Popup.svelte
+index ea6db73..245d070 100644
+--- a/src/lib/Popup.svelte
++++ b/src/lib/Popup.svelte
+@@ -1,6 +1,7 @@
+ <script lang="ts">
+   import { invoke } from "@tauri-apps/api/core";
+   import { CheckMenuItem, Menu } from "@tauri-apps/api/menu";
++  import { showContextMenu } from "./contextMenu";
+   import { Pause, Play, RotateCcw, StepForward } from "@lucide/svelte";
+   import type {
+     FontInfo,
+@@ -125,7 +126,7 @@
+     const menu = await Menu.new({ items });
+     menuOpen = true;
+     try {
+-      await menu.popup();
++      await showContextMenu(menu);
+     } finally {
+       menuOpen = false;
+     }
+diff --git a/src/lib/Reader.svelte b/src/lib/Reader.svelte
+index 4ccc0b1..659787e 100644
+--- a/src/lib/Reader.svelte
++++ b/src/lib/Reader.svelte
+@@ -3,6 +3,7 @@
+   import { invoke } from "@tauri-apps/api/core";
+   import { listen } from "@tauri-apps/api/event";
+   import { Menu } from "@tauri-apps/api/menu";
++  import { showContextMenu } from "./contextMenu";
+   import { getCurrentWindow } from "@tauri-apps/api/window";
+   import { message, open, save } from "@tauri-apps/plugin-dialog";
+   import {
+@@ -1118,7 +1119,7 @@
+         action: () => source.postMessage({ hoshi: "create-highlight", id: crypto.randomUUID().toUpperCase(), color }, "*"),
+       })) },
+     ] });
+-    await menu.popup();
++    await showContextMenu(menu);
+   }
+ 
+   function removeHighlight(highlight: BookHighlight) {
+diff --git a/src/lib/contextMenu.ts b/src/lib/contextMenu.ts
+new file mode 100644
+index 0000000..ce60ec3
+--- /dev/null
++++ b/src/lib/contextMenu.ts
+@@ -0,0 +1,9 @@
++import { invoke } from "@tauri-apps/api/core";
++import type { Menu } from "@tauri-apps/api/menu";
++import { isLinux } from "./platform";
++
++// On Linux (Wayland) a position-less popup has no parent window and lands in the
++// wrong place, so anchor it at the pointer inside our window instead.
++export function showContextMenu(menu: Menu): Promise<void> {
++  return isLinux ? invoke("popup_menu_at_pointer", { rid: menu.rid }) : menu.popup();
++}

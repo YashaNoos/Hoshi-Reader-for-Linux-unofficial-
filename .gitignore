@@ -1,0 +1,9 @@
+# makepkg output
+/src/
+/pkg/
+/hoshi-reader-linux/
+*.pkg.tar.zst
+*.pkg.tar.zst.sig
+*.log
+# upstream checkouts and downloaded archives
+sherpa-onnx-*.tar.bz2
