@@ -1,0 +1,133 @@
+diff --git a/public/popup/popup.html b/public/popup/popup.html
+index 18bb29e..7e02a0a 100644
+--- a/public/popup/popup.html
++++ b/public/popup/popup.html
+@@ -309,8 +309,46 @@
+         window.customCSS = dict.customCSS;
+       }
+ 
++      // WebKitGTK 2.54 (Linux) does not load @font-face, <img> or <script> URLs on another
++      // custom scheme inside this iframe (book:// or image:// from tauri://): the request
++      // never reaches the app. fetch() of the same URL still works, so on Linux fonts are
++      // fetched once and registered through the FontFace API (kept across lookups:
++      // applyPopupFonts runs on every lookup and the stroke-order font is 18 MB), and
++      // selection.js is fetched and inserted inline. Images: setHoshiImageSource in popup.js.
++      const linuxFetchSubresources = /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
++      const popupFontFaces = new Map();
++      function applyPopupFontFaces(fonts) {
++        const wanted = new Set(fonts.map((font) => font.url));
++        for (const [url, entry] of popupFontFaces) {
++          if (wanted.has(url)) continue;
++          if (entry.face) document.fonts.delete(entry.face);
++          popupFontFaces.delete(url);
++        }
++        for (const font of fonts) {
++          if (popupFontFaces.has(font.url)) continue;
++          const entry = { face: null };
++          popupFontFaces.set(font.url, entry);
++          fetch(font.url)
++            .then((response) => {
++              if (!response.ok) throw new Error(`HTTP ${response.status}`);
++              return response.arrayBuffer();
++            })
++            .then((data) => {
++              if (popupFontFaces.get(font.url) !== entry) return;
++              entry.face = new FontFace(font.name, data);
++              document.fonts.add(entry.face);
++              return entry.face.load();
++            })
++            .catch((error) => {
++              console.warn(`popup font ${font.name}: ${error}`);
++              if (popupFontFaces.get(font.url) === entry) popupFontFaces.delete(font.url);
++            });
++        }
++      }
++
+       let popupFontStyle = null;
+       function applyPopupFonts(fonts) {
++        if (linuxFetchSubresources) return applyPopupFontFaces(fonts);
+         popupFontStyle?.remove();
+         popupFontStyle = null;
+         const rules = fonts
+@@ -686,8 +724,24 @@
+       announce();
+ 
+       const selectionScript = document.createElement("script");
+-      selectionScript.src = hoshiSchemeUrl("book", "__hoshi/selection.js");
+-      document.head.appendChild(selectionScript);
++      const selectionUrl = hoshiSchemeUrl("book", "__hoshi/selection.js");
++      if (linuxFetchSubresources) {
++        fetch(selectionUrl)
++          .then((response) => {
++            if (!response.ok) throw new Error(`HTTP ${response.status}`);
++            return response.text();
++          })
++          .then((code) => {
++            selectionScript.textContent = code;
++          })
++          .catch(() => {
++            selectionScript.src = selectionUrl;
++          })
++          .finally(() => document.head.appendChild(selectionScript));
++      } else {
++        selectionScript.src = selectionUrl;
++        document.head.appendChild(selectionScript);
++      }
+     </script>
+   </body>
+ </html>
+diff --git a/public/popup/popup.js b/public/popup/popup.js
+index bb52b5f..a2e2924 100644
+--- a/public/popup/popup.js
++++ b/public/popup/popup.js
+@@ -9,6 +9,32 @@
+ //
+ 
+ const HOSHI_HTTP_SCHEME = /Windows|Android/.test(navigator.userAgent);
++
++// WebKitGTK 2.54 (Linux) does not load <img> URLs on another custom scheme (image://)
++// inside this iframe, while fetch() of the same URL works. On Linux, images are fetched
++// and shown from a blob: URL instead.
++const HOSHI_FETCH_IMAGES = /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
++function setHoshiImageSource(image, url) {
++    if (!HOSHI_FETCH_IMAGES) {
++        image.src = url;
++        return;
++    }
++    fetch(url)
++        .then((response) => {
++            if (!response.ok) throw new Error(`HTTP ${response.status}`);
++            return response.blob();
++        })
++        .then((blob) => {
++            const objectUrl = URL.createObjectURL(blob);
++            const revoke = () => URL.revokeObjectURL(objectUrl);
++            image.addEventListener('load', revoke, {once: true});
++            image.addEventListener('error', revoke, {once: true});
++            image.src = objectUrl;
++        })
++        .catch(() => {
++            image.src = url;
++        });
++}
+ function hoshiSchemeUrl(scheme, path = '') {
+     return HOSHI_HTTP_SCHEME ? `http://${scheme}.localhost/${path}` : `${scheme}://localhost/${path}`;
+ }
+@@ -716,7 +742,7 @@ function createDefinitionImage(data, dictionary, exporting = false) {
+                     aspectRatioSizer.style.paddingTop = `${aspectRatio * 100}%`;
+                 }, {once: true});
+             }
+-            img.src = imageUrl;
++            setHoshiImageSource(img, imageUrl);
+             imageContainer.appendChild(img);
+         }
+     } else {
+@@ -757,7 +783,7 @@ function createDefinitionImageCanvas(imageUrl, onLoad) {
+     sourceImage.addEventListener('load', () => {
+         onLoad(canvas, sourceImage);
+     }, {once: true});
+-    sourceImage.src = imageUrl;
++    setHoshiImageSource(sourceImage, imageUrl);
+     
+     return canvas;
+ }
