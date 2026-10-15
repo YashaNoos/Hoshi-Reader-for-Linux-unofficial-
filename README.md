@@ -112,9 +112,6 @@ Please read these before installing.
 - **x86_64 only.**
 - **No in-app updates.** The updater is disabled on Linux; update through your package
   manager, or download the new AppImage from the Releases page.
-- **Clipboard monitor:** copying exactly the same text twice in a row is not looked up
-  a second time (Linux has no clipboard change counter, so changes are detected by
-  comparing the text). Copy anything else in between and it works.
 - **A Japanese font is required.** The Arch package depends on `noto-fonts-cjk`; for
   the AppImage, install one yourself (see above). Without it, fontconfig falls back to
   a Chinese font.
