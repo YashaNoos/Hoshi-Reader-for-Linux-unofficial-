@@ -15,10 +15,15 @@ patches that make it build and run on Linux, plus the packaging to install it.
 | **Based on upstream** | v1.1.2 |
 | **Linux build revision** | 1.1.2-8 |
 | **Platform** | Linux x86_64 |
-| **Tested on** | Arch Linux, KDE Plasma (Wayland) |
+| **Tested on** | Arch Linux, KDE Plasma (Wayland): package and AppImage<br>Ubuntu 26.04.1, GNOME: AppImage |
 | **License** | GPL-3.0-or-later, same as upstream |
 
 ## Install
+
+| You use | Install |
+|---|---|
+| Arch Linux (or an Arch-based distribution) | the [Arch package](#arch-linux-build-the-package-yourself) |
+| Anything else: Ubuntu, Fedora, Debian, … | the [AppImage](#other-distributions-appimage-experimental) |
 
 ### Arch Linux: build the package yourself
 
@@ -50,12 +55,40 @@ update breaks a pre-built package, rebuild it with `makepkg` or wait for a new r
 
 An AUR package is planned.
 
-### Other distributions
+### Other distributions: AppImage (experimental)
 
-Not packaged yet. The patches should apply anywhere upstream's
+One file that runs without installing anything. Download the `.AppImage` from the
+[Releases](../../releases) page, check it, make it executable and start it:
+
+```sh
+sha256sum -c Hoshi-Reader-for-Linux-*.AppImage.sha256
+chmod +x Hoshi-Reader-for-Linux-*.AppImage
+./Hoshi-Reader-for-Linux-*.AppImage
+```
+
+- **Requirements:** x86_64 and glibc 2.39 or newer (Ubuntu 24.04, Fedora 40, Debian 13
+  or later). It is built on Ubuntu 24.04 and does not run on older systems.
+- **A Japanese font** must be installed on the system, for example Noto Sans CJK JP
+  (Ubuntu/Debian: `fonts-noto-cjk`, Fedora: `google-noto-sans-cjk-fonts`; most
+  desktop installs already have one).
+- **It is large** (~175 MB) because it carries its own WebKitGTK, GTK and GStreamer.
+- **App menu entry:** the AppImage does not add one by itself.
+  [Gear Lever](https://flathub.org/apps/it.mijorus.gearlever) (from Flathub) can add it
+  to your app menu and keep track of updates.
+- **Updating:** download the new AppImage from the Releases page and replace the old
+  file. Your library is kept (see [Where things are stored](#where-things-are-stored)).
+- **Anki** installed as a Flatpak or Snap works.
+
+The AppImage is built by [GitHub Actions](.github/workflows/build-arch.yml) from the
+same upstream tag and patches as the Arch package. It is new: please report problems,
+with your distribution and desktop.
+
+### Building on other distributions
+
+The patches should apply anywhere upstream's
 [build requirements](https://github.com/Manhhao/Hoshi-Reader-Desktop#development)
-are met (Rust, Node with pnpm, CMake, a C++23 compiler, WebKitGTK 4.1), but this is
-untested. Help and reports are welcome.
+are met (Rust, Node with pnpm, CMake, a C++23 compiler, WebKitGTK 4.1). The
+[AppImage job](.github/workflows/build-arch.yml) shows the steps on Ubuntu 24.04.
 
 ## Limitations
 
@@ -73,16 +106,18 @@ Please read these before installing.
   `~/.cache/de.manhhao.hoshi/Models/` and checks it with SHA-256. After that it runs
   fully offline. It was verified on short test audio (mp3, m4b, flac) but not on
   full-length audiobooks.
-- **Tested on one setup:** Arch Linux with KDE Plasma on Wayland. Other desktops, X11
-  and other distributions are unverified.
+- **Tested on few setups:** Arch Linux with KDE Plasma on Wayland (package and
+  AppImage) and Ubuntu 26.04.1 with GNOME (AppImage). Other desktops, X11 and other
+  distributions are unverified.
 - **x86_64 only.**
 - **No in-app updates.** The updater is disabled on Linux; update through your package
-  manager or the Releases page.
+  manager, or download the new AppImage from the Releases page.
 - **Clipboard monitor:** copying exactly the same text twice in a row is not looked up
   a second time (Linux has no clipboard change counter, so changes are detected by
   comparing the text). Copy anything else in between and it works.
-- **A Japanese font is required.** `noto-fonts-cjk` is a dependency; without it
-  fontconfig falls back to a Chinese font.
+- **A Japanese font is required.** The Arch package depends on `noto-fonts-cjk`; for
+  the AppImage, install one yourself (see above). Without it, fontconfig falls back to
+  a Chinese font.
 
 ## What is different from upstream
 
