@@ -13,7 +13,7 @@ patches that make it build and run on Linux, plus the packaging to install it.
 | | |
 |---|---|
 | **Based on upstream** | v1.1.2 |
-| **Linux build revision** | 1.1.2-7 |
+| **Linux build revision** | 1.1.2-8 |
 | **Platform** | Linux x86_64 |
 | **Tested on** | Arch Linux, KDE Plasma (Wayland) |
 | **License** | GPL-3.0-or-later, same as upstream |
@@ -103,6 +103,7 @@ Each patch in [`arch/`](arch) is one self-contained change:
 | `0011-linux-appimage-theme` | AppImage only: the app's Light/Dark setting applies to books and the dictionary even when the desktop uses the other color scheme. No effect in the Arch package. |
 | `0012-linux-webkitgtk-2.54-popup-subresources` | WebKitGTK 2.54 blocks fonts, images and scripts from the app's other URL schemes inside the dictionary popup. Loads them another way so the kanji stroke-order font, dictionary images and lookups inside definitions keep working. |
 | `0013-linux-system-theme` | The "System" theme follows the desktop's light or dark color scheme (read from the desktop portal, as set by KDE and GNOME). Before, it was always light. |
+| `0014-linux-anki-cover-as-data` | Sends the book cover to Anki as data instead of a file path, so the Picture field also works when Anki is a Flatpak or Snap (which cannot read Hoshi's data folder). |
 
 The compiler flags in the PKGBUILD work around newer GCC versions (15/16) breaking
 upstream's C++ dictionary engine because of missing standard `#include`s.
