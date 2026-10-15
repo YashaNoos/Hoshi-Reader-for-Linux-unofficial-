@@ -160,8 +160,23 @@ The Sasayaki transcription pipeline is ported from
 HuangAntimony (GPL-3.0), and uses the
 [ReazonSpeech](https://huggingface.co/reazon-research/reazonspeech-k2-v2) model by
 Reazon Research (Apache-2.0) through [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx).
-See [THIRD_PARTY.md](THIRD_PARTY.md) for the full list with licenses. The same list is
-shown in the app under About, Dependencies and Attribution.
+
+Components added by the Linux build:
+
+| Component | Used for | License | Link |
+|---|---|---|---|
+| **Hoshi Reader Android** (HuangAntimony) | The Sasayaki transcription pipeline (voice-activity segmentation, parallel recognition, stitching) is a port of its approach and constants. | GPL-3.0 | https://github.com/HuangAntimony/Hoshi-Reader-Android |
+| **ReazonSpeech k2 v2** (Reazon Research) | Japanese speech recognition model, int8 build. Downloaded on first use from a pinned Hugging Face revision (`291488c8151be24d7da4bf7af26e533fad96e407`) and verified with SHA-256. Not included in this repository or in the package. | Apache-2.0 | https://huggingface.co/reazon-research/reazonspeech-k2-v2 |
+| **sherpa-onnx** (k2-fsa) | Speech recognition runtime (Rust crate `sherpa-onnx` 1.13.8 and the prebuilt static library for the same version, linked into the binary). | Apache-2.0 | https://github.com/k2-fsa/sherpa-onnx |
+| **ONNX Runtime** (Microsoft) | Inference engine contained in the sherpa-onnx static library. | MIT | https://github.com/microsoft/onnxruntime |
+| **Symphonia** | Audio decoding (mp3, AAC/m4b/m4a, ALAC, FLAC, Ogg Vorbis, WAV) for transcription and duration reading. | MPL-2.0 | https://github.com/pdeljanov/Symphonia |
+| **similar** | Text diff used to align the transcript with the book text. | Apache-2.0 | https://github.com/mitsuhiko/similar |
+| **arboard** | Clipboard access on Wayland and X11. | MIT OR Apache-2.0 | https://github.com/1Password/arboard |
+| **zbus-secret-service-keyring-store** | Stores Google Drive sign-in tokens in the desktop Secret Service (KWallet, GNOME Keyring). | MIT OR Apache-2.0 | https://github.com/open-source-cooperative/zbus-secret-service-keyring-store |
+| **gtk-rs (gtk3-rs)** | Positioning context menus relative to the app window on Wayland. | MIT | https://github.com/gtk-rs/gtk3-rs |
+
+[THIRD_PARTY.md](THIRD_PARTY.md) has the same list with more detail on the source code.
+The list is also shown in the app under About, Dependencies and Attribution.
 
 ## Contributing
 
