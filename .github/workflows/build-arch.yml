@@ -128,12 +128,15 @@ jobs:
           # the runner has no FUSE: let linuxdeploy (itself an AppImage) unpack and run
           export APPIMAGE_EXTRACT_AND_RUN=1
           # linuxdeploy copies each bundled library's license file, except for these packages
-          # (GStreamer plugins, GIO modules, the SVG loader): add theirs explicitly
+          # (GStreamer plugins, GIO modules, the SVG loader): add theirs explicitly. Packages
+          # not installed are not bundled either; the manifest step warns about any gap.
           config=$(python3 -c '
           import json
           pkgs = ["gstreamer1.0-plugins-base", "gstreamer1.0-plugins-good", "gstreamer1.0-plugins-bad",
                   "gstreamer1.0-libav", "glib-networking", "dconf-gsettings-backend", "librsvg2-common"]
-          files = {f"/usr/share/doc/{p}/copyright": f"/usr/share/doc/{p}/copyright" for p in pkgs}
+          import os
+          files = {f"/usr/share/doc/{p}/copyright": f"/usr/share/doc/{p}/copyright" for p in pkgs
+                   if os.path.isfile(f"/usr/share/doc/{p}/copyright")}  # only installed ones
           print(json.dumps({"bundle": {"createUpdaterArtifacts": False, "linux": {"appimage":
               {"bundleMediaFramework": True, "files": files}}}}))')
           pnpm tauri build --bundles appimage --config "$config" 2>&1 | tee ../appimage-build.log
