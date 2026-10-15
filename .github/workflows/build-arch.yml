@@ -54,6 +54,8 @@ jobs:
       - name: Checksum
         run: |
           cd "$GITHUB_WORKSPACE/arch"
+          # the -debug package (symbols for crash analysis) is not part of a release
+          rm -f ./*-debug-*.pkg.tar.zst
           for f in *.pkg.tar.zst; do sha256sum "$f" > "$f.sha256"; done
           ls -l *.pkg.tar.zst*
 
