@@ -60,9 +60,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: arch-package
+          # relative paths: in a container job ${{ github.workspace }} is the host path,
+          # not the container's, which can nest the files inside the artifact
           path: |
-            ${{ github.workspace }}/arch/*.pkg.tar.zst
-            ${{ github.workspace }}/arch/*.pkg.tar.zst.sha256
+            arch/*.pkg.tar.zst
+            arch/*.pkg.tar.zst.sha256
           if-no-files-found: error
 
   # Experimental AppImage for distributions other than Arch (Bazzite, Fedora, Ubuntu, ...).
@@ -188,20 +190,17 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: arch-package
+          path: dist
       - uses: actions/download-artifact@v4
         if: needs.appimage.result == 'success'
         with:
           name: appimage
+          path: dist
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          shopt -s nullglob
-          gh release create "$GITHUB_REF_NAME" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Hoshi Reader for Linux $GITHUB_REF_NAME (unofficial)" \
-            --notes "Unofficial Linux build of Hoshi Reader Desktop. **Arch Linux:** package, see the README for installation and the list of limitations; verify with the .sha256 file, then install with \`sudo pacman -U\`. **Other distributions:** experimental AppImage (if attached), built on Ubuntu 24.04, needs glibc 2.39 or newer; verify with the .sha256 file, then \`chmod +x\` it and run it." \
-            *.pkg.tar.zst *.pkg.tar.zst.sha256 *.AppImage *.AppImage.sha256 *.AppImage.packages.md
+        run: .github/scripts/publish-release.sh "$GITHUB_REF_NAME" dist
