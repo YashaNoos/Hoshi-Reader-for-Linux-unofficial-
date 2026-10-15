@@ -1,0 +1,35 @@
+name: Attach files to a release
+
+# Manual recovery: takes the packages a finished "Build packages" run produced and
+# attaches them to the release for a tag, without rebuilding anything. Use it when a
+# release ended up with missing files. Artifacts are kept for 90 days by default.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, e.g. 1.1.2-8
+        required: true
+      run_id:
+        description: ID of the "Build packages" run whose files to attach (the number in its URL after /runs/)
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  attach:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          path: dist
+      - name: Attach the files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: .github/scripts/publish-release.sh "$TAG" dist
