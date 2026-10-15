@@ -127,13 +127,23 @@ jobs:
           export CXXFLAGS="-include cstdint -include algorithm -include cstring -include memory -include string -include vector -include limits"
           # the runner has no FUSE: let linuxdeploy (itself an AppImage) unpack and run
           export APPIMAGE_EXTRACT_AND_RUN=1
-          pnpm tauri build --bundles appimage \
-            --config '{"bundle":{"createUpdaterArtifacts":false,"linux":{"appimage":{"bundleMediaFramework":true}}}}' \
-            2>&1 | tee ../appimage-build.log
+          # linuxdeploy copies each bundled library's license file, except for these packages
+          # (GStreamer plugins, GIO modules, the SVG loader): add theirs explicitly
+          config=$(python3 -c '
+          import json
+          pkgs = ["gstreamer1.0-plugins-base", "gstreamer1.0-plugins-good", "gstreamer1.0-plugins-bad",
+                  "gstreamer1.0-libav", "glib-networking", "dconf-gsettings-backend", "librsvg2-common"]
+          files = {f"/usr/share/doc/{p}/copyright": f"/usr/share/doc/{p}/copyright" for p in pkgs}
+          print(json.dumps({"bundle": {"createUpdaterArtifacts": False, "linux": {"appimage":
+              {"bundleMediaFramework": True, "files": files}}}}))')
+          pnpm tauri build --bundles appimage --config "$config" 2>&1 | tee ../appimage-build.log
           cd "$GITHUB_WORKSPACE"
           out="Hoshi-Reader-for-Linux-${pkgver}-${pkgrel}-x86_64.AppImage"
           mv hoshi-src/src-tauri/target/release/bundle/appimage/*.AppImage "$out"
           sha256sum "$out" > "$out.sha256"
+          # list of bundled Ubuntu packages, versions and source packages (see THIRD_PARTY.md)
+          .github/scripts/appimage-manifest.sh \
+            "hoshi-src/src-tauri/target/release/bundle/appimage/Hoshi Reader.AppDir" "$out.packages.md"
           ls -l "$out"*
 
       - name: Show the end of the build log as an annotation on failure
@@ -164,6 +174,7 @@ jobs:
           path: |
             ${{ github.workspace }}/Hoshi-Reader-for-Linux-*.AppImage
             ${{ github.workspace }}/Hoshi-Reader-for-Linux-*.AppImage.sha256
+            ${{ github.workspace }}/Hoshi-Reader-for-Linux-*.AppImage.packages.md
           if-no-files-found: error
 
   release:
@@ -190,4 +201,4 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "Hoshi Reader for Linux $GITHUB_REF_NAME (unofficial)" \
             --notes "Unofficial Linux build of Hoshi Reader Desktop. **Arch Linux:** package, see the README for installation and the list of limitations; verify with the .sha256 file, then install with \`sudo pacman -U\`. **Other distributions:** experimental AppImage (if attached), built on Ubuntu 24.04, needs glibc 2.39 or newer; verify with the .sha256 file, then \`chmod +x\` it and run it." \
-            *.pkg.tar.zst *.pkg.tar.zst.sha256 *.AppImage *.AppImage.sha256
+            *.pkg.tar.zst *.pkg.tar.zst.sha256 *.AppImage *.AppImage.sha256 *.AppImage.packages.md

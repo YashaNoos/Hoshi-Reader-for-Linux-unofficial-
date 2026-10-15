@@ -27,10 +27,38 @@ time and checked against a fixed SHA-256 in the [PKGBUILD](arch/PKGBUILD).
 Transitive Rust dependencies pulled in by these crates are listed, with exact versions,
 in `src-tauri/Cargo.lock` after the patches are applied.
 
+## Libraries bundled in the AppImage
+
+The Arch package uses the libraries installed on your system and bundles none of them.
+The AppImage has to run on other distributions, so it carries its own copies of about
+280 Ubuntu 24.04 packages. The main ones:
+
+| Library | Used for | License |
+|---|---|---|
+| **WebKitGTK** (webkit2gtk-4.1, JavaScriptCore) | The web view the whole app runs in | LGPL-2.0/2.1-or-later and BSD-style |
+| **GTK 3, GLib, Pango, Cairo, gdk-pixbuf** | Window, text layout, drawing | LGPL-2.0/2.1-or-later (Cairo: LGPL-2.1 or MPL-1.1) |
+| **libsoup 3, glib-networking** | Networking inside the web view | LGPL-2.0/2.1-or-later |
+| **GStreamer** (core, plugins base/good/bad, gst-libav) | Audiobook and word-audio playback | LGPL-2.0/2.1-or-later |
+| **FFmpeg** (libavcodec, libavformat, …) | Audio decoding inside GStreamer | GPL-2.0-or-later as built by Ubuntu (FFmpeg itself is LGPL-2.1-or-later; Ubuntu enables its GPL parts) |
+| **OpenSSL 3** | TLS | Apache-2.0 |
+| **ICU** | Unicode and text segmentation | ICU license (MIT-style) |
+| **SQLite** | Web view storage | Public domain |
+| **libxml2** | XML parsing | MIT |
+
+- **License texts:** every bundled package's license is inside the AppImage, in
+  `usr/share/doc/<package>/copyright` (run the AppImage with `--appimage-extract` to
+  unpack it).
+- **Exact list:** every release has a `…AppImage.packages.md` file next to the
+  AppImage that lists each bundled package with its exact version and source package.
+- **Source code:** these are unmodified Ubuntu packages. Their source is available from
+  Ubuntu with `apt-get source <source package>=<source version>`, or from each source
+  package's page on [Launchpad](https://launchpad.net/ubuntu).
+
 ## Upstream components this build relies on
 
 Hoshi Reader Desktop is distributed under the GNU General Public License v3.0
 (`Cargo.toml` declares GPL-3.0-or-later). The patches in this repository are
 distributed under the same terms. The complete corresponding source of a build is:
 the upstream release tag named in the PKGBUILD, plus the patches in
-[`arch/`](arch).
+[`arch/`](arch). For the AppImage, add the Ubuntu source packages listed in its
+`…AppImage.packages.md` file (see above).
