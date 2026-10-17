@@ -1,17 +1,29 @@
 name: Build packages
 
-# Builds the package in a clean Arch Linux container.
-#  - every push / pull request / manual run: build only (a check that the patches still
-#    apply and the app still compiles), the package is kept as a workflow artifact
+# Builds the Arch package (in a clean Arch Linux container) and the AppImage.
+#  - pull request or manual run ("Run workflow" on a branch): build only, a check that
+#    the patches still apply and the app still compiles; the packages are kept as
+#    workflow artifacts. Pull requests that only change documentation are not built.
 #  - pushing a tag like `1.1.2-2` (pkgver-pkgrel): also publishes a GitHub release with
 #    the .pkg.tar.zst, the experimental AppImage and their SHA-256 checksums
+# Pushes to main are not built: changes are built on their branch before they are
+# merged, and every release tag builds again from scratch.
 
 on:
   push:
-    branches: [main]
     tags: ['[0-9]*']
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
   workflow_dispatch:
+
+# A newer push to the same pull request or branch cancels its build still running.
+# Release (tag) builds are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 permissions:
   contents: read
