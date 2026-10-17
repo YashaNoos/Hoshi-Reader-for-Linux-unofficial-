@@ -1,8 +1,8 @@
 diff --git a/src/reader/selection.js b/src/reader/selection.js
-index cadc126..a061403 100644
+index cadc126..66c1623 100644
 --- a/src/reader/selection.js
 +++ b/src/reader/selection.js
-@@ -63,6 +63,65 @@ const JAPANESE_RANGES = [
+@@ -63,6 +63,84 @@ const JAPANESE_RANGES = [
      ...FULLWIDTH_CHARACTER_RANGES, // FULLWIDTH_CHARACTER_RANGES
  ];
  
@@ -39,7 +39,7 @@ index cadc126..a061403 100644
 +        if (!this.layer) return;
 +        this.layer.replaceChildren();
 +        if (!this.range) return;
-+        for (const rect of this.range.getClientRects()) {
++        for (const rect of this.rects(this.range)) {
 +            if (rect.width < 1 || rect.height < 1) continue;
 +            const box = document.createElement('div');
 +            box.style.left = `${rect.left}px`;
@@ -48,6 +48,25 @@ index cadc126..a061403 100644
 +            box.style.height = `${rect.height}px`;
 +            this.layer.appendChild(box);
 +        }
++    },
++    // Rects of the range's text, without furigana: <rt>/<rp> are not selectable, so the
++    // native highlight skips them and so does this one.
++    rects(range) {
++        const root = range.commonAncestorContainer;
++        if (root.nodeType === Node.TEXT_NODE) {
++            return root.parentElement?.closest('rt, rp') ? [] : Array.from(range.getClientRects());
++        }
++        const rects = [];
++        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
++        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
++            if (!range.intersectsNode(node) || node.parentElement?.closest('rt, rp')) continue;
++            const part = document.createRange();
++            part.selectNodeContents(node);
++            if (node === range.startContainer) part.setStart(node, range.startOffset);
++            if (node === range.endContainer) part.setEnd(node, range.endOffset);
++            rects.push(...part.getClientRects());
++        }
++        return rects;
 +    },
 +    hide() {
 +        this.range = null;
@@ -68,7 +87,7 @@ index cadc126..a061403 100644
  window.hoshiSelection = {
      selection: null,
      scanDelimiters: '。、！？…‥「」『』（）()【】〈〉《》〔〕｛｝{}［］[]：；:;，,.─\n\r',
-@@ -467,8 +526,10 @@ window.hoshiSelection = {
+@@ -467,8 +545,10 @@ window.hoshiSelection = {
              const range = document.createRange();
              range.setStart(startPoint.node, startPoint.offset);
              range.setEnd(endPoint.node, endPoint.offset);
@@ -79,7 +98,7 @@ index cadc126..a061403 100644
          }
      },
      
-@@ -486,6 +547,7 @@ window.hoshiSelection = {
+@@ -486,6 +566,7 @@ window.hoshiSelection = {
      },
      
      clearSelection() {
@@ -87,7 +106,7 @@ index cadc126..a061403 100644
          window.getSelection()?.removeAllRanges();
          CSS.highlights?.get('hoshi-selection')?.clear();
          this.selection = null;
-@@ -495,6 +557,7 @@ window.hoshiSelection = {
+@@ -495,6 +576,7 @@ window.hoshiSelection = {
  let lastHasSelection = false;
  document.addEventListener('selectionchange', () => {
      const s = getSelection();
