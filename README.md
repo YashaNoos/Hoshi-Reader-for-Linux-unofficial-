@@ -13,7 +13,7 @@ patches that make it build and run on Linux, plus the packaging to install it.
 | | |
 |---|---|
 | **Based on upstream** | v1.1.2 |
-| **Linux build revision** | 1.1.2-11 |
+| **Linux build revision** | 1.1.2-12 |
 | **Platform** | Linux x86_64 |
 | **Tested on** | Arch Linux, KDE Plasma (Wayland): package and AppImage<br>Ubuntu 26.04.1, GNOME: AppImage |
 | **License** | GPL-3.0-or-later, same as upstream |
@@ -142,6 +142,7 @@ Each patch in [`arch/`](arch) is one self-contained change:
 | `0014-linux-anki-cover-as-data` | Sends the book cover to Anki as data instead of a file path, so the Picture field also works when Anki is a Flatpak or Snap (which cannot read Hoshi's data folder). |
 | `0015-linux-lookup-highlight-size` | The highlight on a looked-up word is as wide as the text on every line. WebKit stretched it toward the previous line on all but a paragraph's first line. |
 | `0016-linux-lookup-highlight-offset` | In vertical text WebKitGTK draws characters about 0.13em below their layout boxes, so highlights looked shifted up. The lookup highlight is moved down onto the characters. |
+| `0017-linux-dark-theme-selected-buttons` | In the dark theme, the selected choice in segmented buttons (Layout/Display/Popup, Paginated/Continuous, …) is shown lighter so it stands out. Upstream only darkens it slightly, which is barely visible on a dark background. |
 
 The compiler flags in the PKGBUILD work around newer GCC versions (15/16) breaking
 upstream's C++ dictionary engine because of missing standard `#include`s.
