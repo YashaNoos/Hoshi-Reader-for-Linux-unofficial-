@@ -116,6 +116,12 @@ Please read these before installing.
   0.13em below where it lays it out, so highlights drawn by the browser look shifted up.
   The lookup highlight is corrected; your colored highlights, search results and the
   Sasayaki line highlight still show the offset.
+- **Fullscreen can go black with fractional scaling and several monitors.** On KDE
+  Plasma, with a fractional scale (e.g. 175%) on one monitor and a second monitor at a
+  different refresh rate, a fullscreen Hoshi window can turn that screen black while the
+  mouse cursor is over it (seen on an AMD GPU). This comes from KWin and the
+  graphics driver, not from Hoshi. Using a whole-number scale (100% or 200%) on that
+  monitor avoids it.
 - **A Japanese font is required.** The Arch package depends on `noto-fonts-cjk`; for
   the AppImage, install one yourself (see above). Without it, fontconfig falls back to
   a Chinese font.
