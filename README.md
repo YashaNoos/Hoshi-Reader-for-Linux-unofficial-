@@ -13,7 +13,7 @@ patches that make it build and run on Linux, plus the packaging to install it.
 | | |
 |---|---|
 | **Based on upstream** | v1.1.2 |
-| **Linux build revision** | 1.1.2-10 |
+| **Linux build revision** | 1.1.2-11 |
 | **Platform** | Linux x86_64 |
 | **Tested on** | Arch Linux, KDE Plasma (Wayland): package and AppImage<br>Ubuntu 26.04.1, GNOME: AppImage |
 | **License** | GPL-3.0-or-later, same as upstream |
@@ -128,7 +128,7 @@ Each patch in [`arch/`](arch) is one self-contained change:
 |---|---|
 | `0001-linux-support` | Makes the app compile on Linux: clipboard, audio decoding, keyring storage for sign-in tokens. |
 | `0002-linux-audio-loopback-server` | Audiobook playback. WebKitGTK cannot play `<audio>` from custom URL schemes, so audio is served through a small local loopback server. |
-| `0003-linux-japanese-vertical-text` | Correct vertical Japanese text: rotated punctuation and long-vowel marks, Japanese instead of Chinese fonts, furigana placed like on Windows/macOS. |
+| `0003-linux-japanese-vertical-text` | Correct vertical Japanese text: rotated punctuation and long-vowel marks, Japanese instead of Chinese fonts, furigana placed as close to the text as on Windows/macOS, in vertical and horizontal text. |
 | `0004-linux-desktop-file-dialog` | Uses your desktop's own file dialog (for example Dolphin on KDE) through xdg-desktop-portal when available. |
 | `0005-update-tauri-2.12-wayland-titlebar` | Updates Tauri so the title bar buttons work on Wayland. |
 | `0006-linux-sasayaki-transcription` | On-device Sasayaki transcription using sherpa-onnx and the ReazonSpeech model. |

@@ -3,7 +3,7 @@
 # Maintainer: YashaNoos (https://github.com/YashaNoos)
 pkgname=hoshi-reader-linux
 pkgver=1.1.2
-pkgrel=10
+pkgrel=11
 pkgdesc='Japanese EPUB reader with pop-up dictionary and Anki mining (unofficial Linux build)'
 arch=('x86_64')
 url='https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-'
@@ -46,7 +46,7 @@ noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
 sha256sums=('SKIP'
             '768f6141a34787add9253f8645c19096c0717699d8f20a74fa2fd2d7f7a3b99f'
             '7e84134f5d034b1d567a70e4b1fb977db169e189a2a4c0cab60d79ed33fd17a7'
-            '7e9bbc475c9a3ef3b4ae9aaac9572b301601e33725fafc347876ba4382d40f89'
+            '229af18b277e0bec3075cea5bd7ba4c08cd50e31d1c43623143ad633a50d5670'
             '8dcb418562d79a55b424461605c1ff247f0725edb9655b10da3108843aab4f7f'
             '1541372f7df9e74c3f972ba69d6d6e88605abc47e5baa3bca1c7cf372c6e2954'
             'cbfb785acaa4d47af30347e19b6504893baec07ca791a8104cc8fef5da895707'
