@@ -10,6 +10,8 @@ dictionary, Anki mining and audiobook support (Sasayaki), built with Tauri and S
 Upstream ships macOS and Windows builds only. This repository holds a small set of
 patches that make it build and run on Linux, plus the packaging to install it.
 
+![Hoshi Reader on Linux: vertical text with the dictionary pop-up open](docs/screenshot.png)
+
 | | |
 |---|---|
 | **Based on upstream** | v1.1.2 |
