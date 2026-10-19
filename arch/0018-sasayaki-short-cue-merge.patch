@@ -1,0 +1,43 @@
+diff --git a/src-tauri/src/aligner.rs b/src-tauri/src/aligner.rs
+index fc0d1fe..20fa733 100644
+--- a/src-tauri/src/aligner.rs
++++ b/src-tauri/src/aligner.rs
+@@ -16,6 +16,9 @@ const END_PADDING: f64 = 0.3;
+ const LEADING_GAP: f64 = 0.5;
+ const CHARACTER_SPAN: f64 = 0.15;
+ const START_LEAD: f64 = 0.2;
++/// Comma-separated pieces shorter than this are not cut into their own cue: a short
++/// opening (だが、) joins the text after it, a short ending (、きっと。) the text before it.
++const MIN_CUE_CHARACTERS: usize = 4;
+ const EXACT_WINDOW: usize = 20;
+ const EXACT_SHARE: usize = 4;
+ 
+@@ -341,9 +344,26 @@ fn is_boundary(source: &Source, chapter: &Chapter, start: usize, index: usize) -
+     }
+ 
+     source.segment_ends[index]
+-        && index > start
++        && index + 1 - start >= MIN_CUE_CHARACTERS
+         && index + 2 < chapter.end()
+-        && !source.sentence_ends[index + 1]
++        && !short_sentence_tail(source, chapter, index)
++}
++
++/// True when the piece after the comma at `index` is the last one of its sentence and
++/// shorter than `MIN_CUE_CHARACTERS` (…だろう、きっと。): it stays with the cue before it.
++fn short_sentence_tail(source: &Source, chapter: &Chapter, index: usize) -> bool {
++    for next in index + 1..chapter.end() {
++        if next - index > MIN_CUE_CHARACTERS - 1 {
++            return false;
++        }
++        if source.sentence_ends[next] || next == chapter.end() - 1 {
++            return true;
++        }
++        if source.segment_ends[next] {
++            return false;
++        }
++    }
++    false
+ }
+ 
+ fn time(
