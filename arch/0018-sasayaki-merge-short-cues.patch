@@ -107,7 +107,7 @@ index 0f6eb86..8a69a62 100644
      .await
      .unwrap()?;
 diff --git a/src/lib/MatchDialog.svelte b/src/lib/MatchDialog.svelte
-index a108af4..d860988 100644
+index a108af4..b8d2b3e 100644
 --- a/src/lib/MatchDialog.svelte
 +++ b/src/lib/MatchDialog.svelte
 @@ -67,6 +67,14 @@
@@ -152,8 +152,8 @@ index a108af4..d860988 100644
 +            >
 +              −
 +            </button>
-+            <span class="btn join-item btn-sm pointer-events-none w-24 whitespace-nowrap tabular-nums">
-+              ≤ {mergeShortCues} {mergeShortCues === 1 ? "char" : "chars"}
++            <span class="btn join-item btn-sm pointer-events-none w-36 whitespace-nowrap tabular-nums">
++              ≤ {mergeShortCues} {mergeShortCues === 1 ? "char (default)" : "chars"}
 +            </span>
 +            <button
 +              class="btn join-item btn-sm"
