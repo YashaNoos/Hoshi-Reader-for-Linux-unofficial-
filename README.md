@@ -103,9 +103,11 @@ Please read these before installing.
   [PKGBUILD](arch/PKGBUILD)); sign-in tokens are kept in KWallet or GNOME Keyring. This path
   is implemented but **has not been tested**. If you rely on syncing with the iOS or
   Android apps, this build is not for you yet.
-- **Sasayaki transcription** works, for Japanese audio only. On first use it downloads
-  the ~630 MB speech model (NVIDIA parakeet-tdt_ctc-0.6b-ja) from this repository's
-  releases into `~/.cache/de.manhhao.hoshi/Models/` and checks it with SHA-256. After that it runs
+- **Sasayaki transcription** works, for Japanese audio only. Match → Transcription → Model
+  chooses the speech model: NVIDIA parakeet-tdt_ctc-0.6b-ja (default, ~630 MB, from this
+  repository's releases) or ReazonSpeech k2 v2 (~160 MB, from Hugging Face, the model of
+  Hoshi Reader Android). On first use the chosen model is downloaded into
+  `~/.cache/de.manhhao.hoshi/Models/` and checked with SHA-256. After that it runs
   fully offline. It was verified on short test audio (mp3, m4b, flac) but not on
   full-length audiobooks.
 - **Tested on few setups:** Arch Linux with KDE Plasma on Wayland (package and
@@ -151,8 +153,8 @@ Each patch in [`arch/`](arch) is one self-contained change:
 | `0015-linux-lookup-highlight-size` | The highlight on a looked-up word is as wide as the text on every line. WebKit stretched it toward the previous line on all but a paragraph's first line. |
 | `0016-linux-lookup-highlight-offset` | In vertical text WebKitGTK draws characters about 0.13em below their layout boxes, so highlights looked shifted up. The lookup highlight is moved down onto the characters. |
 | `0017-linux-dark-theme-selected-buttons` | In the dark theme, the selected choice in segmented buttons (Layout/Display/Popup, Paginated/Continuous, …) is shown lighter so it stands out. Upstream only darkens it slightly, which is barely visible on a dark background. |
-| `0018-sasayaki-merge-short-cues` | Sasayaki: new "Merge short cues" setting in Match, Transcription. The default, ≤ 1 character, cuts cues exactly like upstream. Raised to 2–6, a comma-separated piece that short is not made a cue on its own: a short opening (だが、) joins the text after it, a short ending (、きっと。) the text before it. Not in upstream. |
-| `0019-sasayaki-parakeet-ja` | Transcription uses NVIDIA's parakeet-tdt_ctc-0.6b-ja model instead of ReazonSpeech k2: it hears names and clauses after pauses that ReazonSpeech dropped, and writes words in kanji like the book (明日, not あした), so far more of the text matches. The audio is given to it in pieces of 15–30 s, since it uses the context. |
+| `0018-sasayaki-merge-short-cues` | Sasayaki: new "Merge short cues" setting in Match, for Transcription and Subtitles. The default, ≤ 1 character, cuts cues exactly like upstream. Raised to 2–6, a comma-separated piece that short is not made a cue on its own: a short opening (だが、) joins the text after it, a short ending (、きっと。) the text before it. With subtitles, a cue that short joins the cue next to it when both follow each other in the book within one sentence. Not in upstream. |
+| `0019-sasayaki-parakeet-ja` | Transcription can use NVIDIA's parakeet-tdt_ctc-0.6b-ja model (the default) or ReazonSpeech k2 (Match → Transcription → Model). Parakeet hears names and clauses after pauses that ReazonSpeech dropped, and writes words in kanji like the book (明日, not あした), so far more of the text matches. The audio is given to it in pieces of 15–30 s, since it uses the context; ReazonSpeech keeps the cutting of the other platforms. A saved transcription remembers its model: switching model transcribes the audio again. |
 | `0020-sasayaki-aligner-unlikely-matches` | Sasayaki matching: a lone kana that matches between differences is ignored when it cannot belong there. Example: the transcript writes あした for the book's 明日, and its あ was matched to the book's next あ (「あ、明日？」), giving that cue the wrong audio. Not in upstream. |
 
 The compiler flags in the PKGBUILD work around newer GCC versions (15/16) breaking
@@ -174,7 +176,9 @@ The Sasayaki transcription pipeline is ported from
 [Hoshi Reader Android](https://github.com/HuangAntimony/Hoshi-Reader-Android) by
 HuangAntimony (GPL-3.0), and uses NVIDIA's
 [parakeet-tdt_ctc-0.6b-ja](https://huggingface.co/nvidia/parakeet-tdt_ctc-0.6b-ja) model
-(CC-BY-4.0, converted to sherpa-onnx and quantized to int8) through
+(CC-BY-4.0, converted to sherpa-onnx and quantized to int8) or the
+[ReazonSpeech](https://huggingface.co/reazon-research/reazonspeech-k2-v2) model by
+Reazon Research (Apache-2.0) through
 [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx).
 
 Components added by the Linux build:
@@ -182,7 +186,8 @@ Components added by the Linux build:
 | Component | Used for | License | Link |
 |---|---|---|---|
 | **Hoshi Reader Android** (HuangAntimony) | The Sasayaki transcription pipeline (voice-activity segmentation, parallel recognition, stitching) is a port of its approach and constants. | GPL-3.0 | https://github.com/HuangAntimony/Hoshi-Reader-Android |
-| **parakeet-tdt_ctc-0.6b-ja** (NVIDIA) | Japanese speech recognition model (trained on ReazonSpeech v2.0). Converted to sherpa-onnx (transducer branch only) and quantized to int8 for this build; about 630 MB. Downloaded on first use from this repository's [model release](https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-/releases/tag/model-parakeet-ja-1) and verified with SHA-256. Not included in the package. | CC-BY-4.0 | https://huggingface.co/nvidia/parakeet-tdt_ctc-0.6b-ja |
+| **parakeet-tdt_ctc-0.6b-ja** (NVIDIA) | Japanese speech recognition model (trained on ReazonSpeech v2.0). Converted to sherpa-onnx (transducer branch only) and quantized to int8 for this build; about 630 MB. The default model. Downloaded on first use from this repository's [model release](https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-/releases/tag/model-parakeet-ja-1) and verified with SHA-256. Not included in the package. | CC-BY-4.0 | https://huggingface.co/nvidia/parakeet-tdt_ctc-0.6b-ja |
+| **ReazonSpeech k2 v2** (Reazon Research) | Japanese speech recognition model, int8 build; about 160 MB. Used when chosen in Match (Transcription → Model). Downloaded on first use from a pinned Hugging Face revision (`291488c8151be24d7da4bf7af26e533fad96e407`) and verified with SHA-256. Not included in this repository or in the package. | Apache-2.0 | https://huggingface.co/reazon-research/reazonspeech-k2-v2 |
 | **sherpa-onnx** (k2-fsa) | Speech recognition runtime (Rust crate `sherpa-onnx` 1.13.8 and the prebuilt static library for the same version, linked into the binary). | Apache-2.0 | https://github.com/k2-fsa/sherpa-onnx |
 | **ONNX Runtime** (Microsoft) | Inference engine contained in the sherpa-onnx static library. | MIT | https://github.com/microsoft/onnxruntime |
 | **Symphonia** | Audio decoding (mp3, AAC/m4b/m4a, ALAC, FLAC, Ogg Vorbis, WAV) for transcription and duration reading. | MPL-2.0 | https://github.com/pdeljanov/Symphonia |

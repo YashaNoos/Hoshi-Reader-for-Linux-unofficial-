@@ -1,87 +1,316 @@
+diff --git a/src-tauri/Cargo.toml b/src-tauri/Cargo.toml
+index 7e73681..d26c627 100644
+--- a/src-tauri/Cargo.toml
++++ b/src-tauri/Cargo.toml
+@@ -83,7 +83,7 @@ libloading = "0.8"
+ 
+ [features]
+ default = ["transcription"]
+-# Linux: on-device Sasayaki transcription (sherpa-onnx + ReazonSpeech). No effect on macOS/Windows.
++# Linux: on-device Sasayaki transcription (sherpa-onnx + parakeet or ReazonSpeech). No effect on macOS/Windows.
+ transcription = ["dep:sherpa-onnx"]
+ 
+ [profile.dev.package."*"]
+diff --git a/src-tauri/src/transcriber.rs b/src-tauri/src/transcriber.rs
+index 8a69a62..d1cceea 100644
+--- a/src-tauri/src/transcriber.rs
++++ b/src-tauri/src/transcriber.rs
+@@ -27,12 +27,23 @@ struct SasayakiTranscript {
+     through: f64,
+     duration: f64,
+     tokens: Vec<SasayakiToken>,
++    /// Linux build: the speech model that made it ("parakeet", "reazonspeech").
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    model: Option<String>,
+ }
+ 
+ #[derive(Serialize, Deserialize)]
+ pub struct TranscriptProgress {
+     through: f64,
+     duration: f64,
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    model: Option<String>,
++}
++
++/// Linux build: a transcript saved without a model was made by ReazonSpeech, the only
++/// model of earlier builds. Elsewhere no model is sent or saved.
++fn same_model(saved: Option<&str>, requested: Option<&str>) -> bool {
++    saved.or(requested.map(|_| "reazonspeech")) == requested
+ }
+ 
+ impl SasayakiTranscript {
+@@ -105,8 +116,10 @@ pub async fn sasayaki_transcribe(
+     path: String,
+     performance: i32,
+     merge_short_cues: Option<usize>,
++    model: Option<String>,
+     on_progress: Channel<Progress>,
+ ) -> Result<(), String> {
++    let model = cfg!(target_os = "linux").then(|| model.unwrap_or_else(|| "parakeet".into()));
+     let cancel = CancellationToken::new();
+     {
+         let mut running = RUNNING.lock().unwrap();
+@@ -128,11 +141,14 @@ pub async fn sasayaki_transcribe(
+     let transcript_path = root.join(TRANSCRIPT_FILE);
+     let mut transcript = library::read_json::<SasayakiTranscript>(&transcript_path)
+         .filter(|saved| saved.duration == duration)
++        .filter(|saved| same_model(saved.model.as_deref(), model.as_deref()))
+         .unwrap_or(SasayakiTranscript {
+             through: 0.0,
+             duration,
+             tokens: Vec::new(),
++            model: None,
+         });
++    transcript.model = model.clone();
+ 
+     progress(Progress::Transcribing {
+         through: transcript.through,
+@@ -141,7 +157,9 @@ pub async fn sasayaki_transcribe(
+     });
+     // Linux: the saved tail lets the resumed transcription drop words it hears again.
+     #[cfg(target_os = "linux")]
+-    let audio = audio.resuming_after(&transcript.tokens, transcript.through);
++    let audio = audio
++        .resuming_after(&transcript.tokens, transcript.through)
++        .with_model(model.as_deref().unwrap_or_default());
+     if !transcript.is_complete() {
+         let (sender, mut events) = mpsc::unbounded_channel();
+         backend::start(&app, audio, transcript.through, performance, sender, cancel)?;
+@@ -202,3 +220,16 @@ pub async fn sasayaki_transcribe(
+         .save_sasayaki_match(&result, &folder, &root)
+         .map_err(|error| error.to_string())
+ }
++
++#[cfg(test)]
++mod tests {
++    #[test]
++    fn transcripts_without_a_model_are_reazonspeech() {
++        use super::same_model;
++        assert!(same_model(None, Some("reazonspeech")));
++        assert!(!same_model(None, Some("parakeet")));
++        assert!(same_model(Some("parakeet"), Some("parakeet")));
++        assert!(!same_model(Some("parakeet"), Some("reazonspeech")));
++        assert!(same_model(None, None));
++    }
++}
 diff --git a/src-tauri/src/transcriber/linux.rs b/src-tauri/src/transcriber/linux.rs
-index e07a971..d27c4f4 100644
+index e07a971..8cbebce 100644
 --- a/src-tauri/src/transcriber/linux.rs
 +++ b/src-tauri/src/transcriber/linux.rs
-@@ -1,5 +1,5 @@
+@@ -1,6 +1,7 @@
 -//! Linux transcription backend: sherpa-onnx with the ReazonSpeech model (see
 -//! `crate::transcription`). The model (~160 MB) is downloaded on first use into the app's
-+//! Linux transcription backend: sherpa-onnx with NVIDIA's parakeet-tdt_ctc-0.6b-ja model
-+//! (see `crate::transcription`). The model (~630 MB) is downloaded on first use into the app's
- //! cache directory and checked with SHA-256; after that everything runs offline.
+-//! cache directory and checked with SHA-256; after that everything runs offline.
++//! Linux transcription backend: sherpa-onnx with NVIDIA's parakeet-tdt_ctc-0.6b-ja (~630 MB)
++//! or ReazonSpeech k2 v2 (~160 MB), chosen in Match (see `crate::transcription`). The model
++//! is downloaded on first use into the app's cache directory and checked with SHA-256;
++//! after that everything runs offline.
  //!
  //! Built without the `transcription` feature, transcription reports "unsupported".
-@@ -58,8 +58,11 @@ pub fn start(
+ 
+@@ -17,9 +18,17 @@ pub struct Audio {
+     /// Already saved tokens near the resume point, to drop repeated words.
+     #[cfg_attr(not(feature = "transcription"), allow(dead_code))]
+     previous: Vec<SasayakiToken>,
++    /// "parakeet" or "reazonspeech".
++    #[cfg_attr(not(feature = "transcription"), allow(dead_code))]
++    model: String,
+ }
+ 
+ impl Audio {
++    pub fn with_model(mut self, model: &str) -> Self {
++        self.model = model.to_string();
++        self
++    }
++
+     pub fn resuming_after(mut self, tokens: &[SasayakiToken], through: f64) -> Self {
+         let tail = tokens.partition_point(|token| token.end < through - 1.0);
+         self.previous = tokens[tail..].to_vec();
+@@ -36,6 +45,7 @@ pub fn prepare(path: &str) -> Result<Audio, String> {
+         path,
+         duration,
+         previous: Vec::new(),
++        model: String::new(),
+     })
+ }
+ 
+@@ -58,8 +68,9 @@ pub fn start(
          .path()
          .app_cache_dir()
          .unwrap_or_else(|_| std::env::temp_dir())
 -        .join("Models")
 -        .join("reazonspeech-k2-v2-int8");
 +        .join("Models");
-+    for old in crate::transcription::model::OLD_MODELS {
-+        std::fs::remove_dir_all(model_dir.join(old)).ok();
-+    }
-+    let model_dir = model_dir.join(crate::transcription::model::MODEL_NAME);
++    let model = crate::transcription::model::Model::from_id(&audio.model);
++    let model_dir = model_dir.join(model.dir_name());
      let stop = Arc::new(AtomicBool::new(false));
      let flag = stop.clone();
      tauri::async_runtime::spawn(async move {
+@@ -68,6 +79,7 @@ pub fn start(
+     });
+     std::thread::spawn(move || {
+         let result = crate::transcription::transcribe(
++            model,
+             &model_dir,
+             &audio.path,
+             from,
 diff --git a/src-tauri/src/transcription/mod.rs b/src-tauri/src/transcription/mod.rs
-index be07601..516dc16 100644
+index be07601..b40e9ab 100644
 --- a/src-tauri/src/transcription/mod.rs
 +++ b/src-tauri/src/transcription/mod.rs
-@@ -1,4 +1,4 @@
+@@ -1,5 +1,5 @@
 -// On-device Sasayaki transcription for Linux: sherpa-onnx + ReazonSpeech k2 v2,
-+// On-device Sasayaki transcription for Linux: sherpa-onnx + parakeet-tdt_ctc-0.6b-ja,
- // following the pipeline of Hoshi Reader Android. Used by transcriber/linux.rs; the
+-// following the pipeline of Hoshi Reader Android. Used by transcriber/linux.rs; the
++// On-device Sasayaki transcription for Linux: sherpa-onnx + parakeet-tdt_ctc-0.6b-ja or
++// ReazonSpeech k2 v2, following the pipeline of Hoshi Reader Android. Used by transcriber/linux.rs; the
  // transcript is aligned to the book by the shared aligner (aligner.rs).
  
-@@ -35,7 +35,7 @@ fn recognizer(paths: &model::ModelPaths, threads: i32) -> Result<OfflineRecogniz
+ pub mod audio;
+@@ -13,7 +13,8 @@ use std::sync::{Arc, Mutex, mpsc};
+ use sherpa_onnx::{OfflineModelConfig, OfflineRecognizer, OfflineRecognizerConfig, OfflineTransducerModelConfig};
+ 
+ pub use crate::sasayaki::SasayakiToken as Token;
+-use pipeline::{Batch, OrderedScheduler, Pipeline, Recognition, Stitcher, project_tokens};
++use model::Model;
++use pipeline::{Batch, Cutting, OrderedScheduler, Pipeline, Recognition, Stitcher, project_tokens};
+ 
+ /// Concurrent recognitions and ONNX threads per recognition, from the CPU count.
+ fn parallelism() -> (usize, i32) {
+@@ -23,7 +24,7 @@ fn parallelism() -> (usize, i32) {
+     (workers, threads)
+ }
+ 
+-fn recognizer(paths: &model::ModelPaths, threads: i32) -> Result<OfflineRecognizer, String> {
++fn recognizer(model: Model, paths: &model::ModelPaths, threads: i32) -> Result<OfflineRecognizer, String> {
+     let path = |p: &Path| Some(p.to_string_lossy().into_owned());
+     let mut config = OfflineRecognizerConfig::default();
+     config.model_config = OfflineModelConfig {
+@@ -35,7 +36,7 @@ fn recognizer(paths: &model::ModelPaths, threads: i32) -> Result<OfflineRecogniz
          tokens: path(&paths.tokens),
          num_threads: threads,
          provider: Some("cpu".into()),
 -        model_type: Some("transducer".into()),
-+        model_type: Some("nemo_transducer".into()),
++        model_type: Some(model.model_type().into()),
          ..Default::default()
      };
      config.decoding_method = Some("greedy_search".into());
+@@ -58,9 +59,12 @@ fn recognize(recognizer: &OfflineRecognizer, job: &Recognition) -> Result<Batch,
+     })
+ }
+ 
+-/// Transcribes `path` from `from` seconds. Blocking; returns Ok(()) when cancelled.
++/// Transcribes `path` from `from` seconds with `model`, whose files are (or are downloaded)
++/// in `model_dir`. Blocking; returns Ok(()) when cancelled.
+ /// `previous` is the already saved transcript tail, used to drop repeated words on resume.
++#[allow(clippy::too_many_arguments)]
+ pub fn transcribe(
++    model: Model,
+     model_dir: &Path,
+     path: &Path,
+     from: f64,
+@@ -74,11 +78,11 @@ pub fn transcribe(
+         on_tokens(Vec::new(), duration);
+         return Ok(());
+     }
+-    let Some(paths) = tauri::async_runtime::block_on(model::ensure(model_dir, cancel, on_download))? else {
++    let Some(paths) = tauri::async_runtime::block_on(model::ensure(model, model_dir, cancel, on_download))? else {
+         return Ok(());
+     };
+     let (workers, threads) = parallelism();
+-    let recognizer = Arc::new(recognizer(&paths, threads)?);
++    let recognizer = Arc::new(recognizer(model, &paths, threads)?);
+ 
+     type Work = (Recognition, mpsc::SyncSender<Result<Batch, String>>);
+     let (jobs, queue) = mpsc::channel::<Work>();
+@@ -96,7 +100,11 @@ pub fn transcribe(
+ 
+     // Half a second of leading context; the stitcher drops what was already saved.
+     let audio_from = (from - 0.5).max(0.0);
+-    let mut pipeline = Pipeline::new(from, duration, audio_from);
++    let cutting = match model {
++        Model::Parakeet => Cutting::PARAKEET,
++        Model::ReazonSpeech => Cutting::REAZONSPEECH,
++    };
++    let mut pipeline = Pipeline::new(from, duration, audio_from, cutting);
+     let mut scheduler = OrderedScheduler::new(jobs, workers + 1, Stitcher::new(from, previous), from, on_tokens);
+     let stop = AtomicBool::new(false);
+     let decoded = audio::decode(path, audio_from, &stop, |chunk| {
 diff --git a/src-tauri/src/transcription/model.rs b/src-tauri/src/transcription/model.rs
-index 747a2b8..3522f12 100644
+index 747a2b8..ac9a2b1 100644
 --- a/src-tauri/src/transcription/model.rs
 +++ b/src-tauri/src/transcription/model.rs
-@@ -1,5 +1,6 @@
+@@ -1,5 +1,5 @@
 -// ReazonSpeech k2 v2 (Apache-2.0) model files: the same pinned revision and checksums
 -// as Hoshi Reader Android, downloaded on first use and verified with SHA-256.
-+// NVIDIA parakeet-tdt_ctc-0.6b-ja (CC-BY-4.0), TDT branch exported to sherpa-onnx and
-+// quantized to int8 (see the model release's README). Downloaded on first use from this
-+// project's GitHub release and verified with SHA-256.
++// Speech model files (parakeet or ReazonSpeech), downloaded on first use and verified
++// with SHA-256.
  
  use std::fs;
  use std::io::Write;
-@@ -8,7 +9,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
+@@ -8,7 +8,56 @@ use std::sync::atomic::{AtomicBool, Ordering};
  
  use sha2::{Digest, Sha256};
  
 -const BASE: &str = "https://huggingface.co/reazon-research/reazonspeech-k2-v2/resolve/291488c8151be24d7da4bf7af26e533fad96e407/";
-+const BASE: &str = "https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-/releases/download/model-parakeet-ja-1/";
++/// The two models this build can use (Transcription → Model in Match).
++#[derive(Clone, Copy, PartialEq, Eq, Debug)]
++pub enum Model {
++    /// NVIDIA parakeet-tdt_ctc-0.6b-ja (CC-BY-4.0), TDT branch exported to sherpa-onnx and
++    /// quantized to int8, from this project's GitHub release. Needs long pieces (context).
++    Parakeet,
++    /// ReazonSpeech k2 v2 (Apache-2.0): the same pinned revision and checksums as Hoshi
++    /// Reader Android. Cuts at every short pause, like the other platforms.
++    ReazonSpeech,
++}
 +
-+/// Directory name under the cache's Models folder; also used to remove older models.
-+pub const MODEL_NAME: &str = "parakeet-tdt_ctc-0.6b-ja-int8";
-+/// Models of earlier builds, removed once this one is in place.
-+pub const OLD_MODELS: [&str; 1] = ["reazonspeech-k2-v2-int8"];
++impl Model {
++    /// The id the frontend sends and the transcript stores. Unknown ids use parakeet.
++    pub fn from_id(id: &str) -> Model {
++        match id {
++            "reazonspeech" => Model::ReazonSpeech,
++            _ => Model::Parakeet,
++        }
++    }
++
++    /// Directory name under the cache's Models folder.
++    pub fn dir_name(self) -> &'static str {
++        match self {
++            Model::Parakeet => "parakeet-tdt_ctc-0.6b-ja-int8",
++            Model::ReazonSpeech => "reazonspeech-k2-v2-int8",
++        }
++    }
++
++    /// sherpa-onnx's model_type for the transducer.
++    pub fn model_type(self) -> &'static str {
++        match self {
++            Model::Parakeet => "nemo_transducer",
++            Model::ReazonSpeech => "transducer",
++        }
++    }
++
++    fn base(self) -> &'static str {
++        match self {
++            Model::Parakeet => "https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-/releases/download/model-parakeet-ja-1/",
++            Model::ReazonSpeech => "https://huggingface.co/reazon-research/reazonspeech-k2-v2/resolve/291488c8151be24d7da4bf7af26e533fad96e407/",
++        }
++    }
++
++    pub fn files(self) -> &'static [ModelFile; 4] {
++        match self {
++            Model::Parakeet => &PARAKEET_FILES,
++            Model::ReazonSpeech => &REAZONSPEECH_FILES,
++        }
++    }
++}
  
  pub struct ModelFile {
      pub name: &'static str,
-@@ -18,14 +24,14 @@ pub struct ModelFile {
+@@ -17,7 +66,18 @@ pub struct ModelFile {
+     sha256: &'static str,
  }
  
- pub const FILES: [ModelFile; 4] = [
--    ModelFile { name: "encoder.int8.onnx", remote: "encoder-epoch-99-avg-1.int8.onnx", bytes: 154_670_139,
--        sha256: "2c7bd08a8a99f9ddd0d9e458456577b1f6279214e51426f114f9eced44c54e1d" },
--    ModelFile { name: "decoder.int8.onnx", remote: "decoder-epoch-99-avg-1.int8.onnx", bytes: 2_959_337,
--        sha256: "8f0bff94d38797b03b762634ed03211a8e303d06cc4603cdd0cf4199d6eb1485" },
--    ModelFile { name: "joiner.int8.onnx", remote: "joiner-epoch-99-avg-1.int8.onnx", bytes: 2_696_970,
--        sha256: "49cc7ea1d3d35a40a27442db5e89996da64bf0e683a903dce76e99e57a12e4de" },
--    ModelFile { name: "tokens.txt", remote: "tokens.txt", bytes: 45_754,
--        sha256: "2c3ac659818a48a0c04010e0593bbc4d7c8a24a054340b01131499c05fd52def" },
+-pub const FILES: [ModelFile; 4] = [
++const PARAKEET_FILES: [ModelFile; 4] = [
 +    ModelFile { name: "encoder.int8.onnx", remote: "encoder.int8.onnx", bytes: 652_467_728,
 +        sha256: "2780b59886febf5b00bfb411a7ed9e6ef569b871739fcc58e7c7b42398f38277" },
 +    ModelFile { name: "decoder.int8.onnx", remote: "decoder.int8.onnx", bytes: 8_568_472,
@@ -90,47 +319,148 @@ index 747a2b8..3522f12 100644
 +        sha256: "d2e2f86466d3d1bdee245c791131a403f6061cb3e588b60dea23648878b8e0af" },
 +    ModelFile { name: "tokens.txt", remote: "tokens.txt", bytes: 28_557,
 +        sha256: "732f64c53909f2620c713f4106b487d92e6f54a6915b3cd3d1dbd32f9f4f392a" },
- ];
++];
++
++const REAZONSPEECH_FILES: [ModelFile; 4] = [
+     ModelFile { name: "encoder.int8.onnx", remote: "encoder-epoch-99-avg-1.int8.onnx", bytes: 154_670_139,
+         sha256: "2c7bd08a8a99f9ddd0d9e458456577b1f6279214e51426f114f9eced44c54e1d" },
+     ModelFile { name: "decoder.int8.onnx", remote: "decoder-epoch-99-avg-1.int8.onnx", bytes: 2_959_337,
+@@ -38,12 +98,12 @@ pub struct ModelPaths {
+ }
  
- const VERIFIED_MARKER: &str = ".verified";
+ impl ModelPaths {
+-    fn in_dir(dir: &Path) -> Self {
++    fn in_dir(dir: &Path, files: &[ModelFile; 4]) -> Self {
+         let find = |file: &ModelFile| {
+             let local = dir.join(file.name);
+             if local.is_file() { local } else { dir.join(file.remote) }
+         };
+-        ModelPaths { encoder: find(&FILES[0]), decoder: find(&FILES[1]), joiner: find(&FILES[2]), tokens: find(&FILES[3]) }
++        ModelPaths { encoder: find(&files[0]), decoder: find(&files[1]), joiner: find(&files[2]), tokens: find(&files[3]) }
+     }
+ }
+ 
+@@ -67,32 +127,41 @@ fn sha256(path: &Path) -> std::io::Result<String> {
+ }
+ 
+ /// Returns ready model paths, downloading (with `progress` in 0..=1) when needed.
+-/// `HOSHI_SASAYAKI_MODEL_DIR` points at a directory with the files already present.
+-pub async fn ensure(dir: &Path, cancel: &AtomicBool, progress: &mut dyn FnMut(f64)) -> Result<Option<ModelPaths>, String> {
++/// `HOSHI_SASAYAKI_MODEL_DIR` points at a directory with the files already present (or
++/// with one subdirectory per model, named like the cache's).
++pub async fn ensure(
++    model: Model,
++    dir: &Path,
++    cancel: &AtomicBool,
++    progress: &mut dyn FnMut(f64),
++) -> Result<Option<ModelPaths>, String> {
+     if let Some(custom) = std::env::var_os("HOSHI_SASAYAKI_MODEL_DIR") {
+-        return Ok(Some(ModelPaths::in_dir(Path::new(&custom))));
++        let custom = Path::new(&custom);
++        let dir = Some(custom.join(model.dir_name())).filter(|dir| dir.is_dir());
++        return Ok(Some(ModelPaths::in_dir(dir.as_deref().unwrap_or(custom), model.files())));
+     }
+-    fetch(BASE, dir, cancel, progress).await
++    fetch(model.base(), model.files(), dir, cancel, progress).await
+ }
+ 
+ pub(crate) async fn fetch(
+     base: &str,
++    files: &'static [ModelFile; 4],
+     dir: &Path,
+     cancel: &AtomicBool,
+     progress: &mut dyn FnMut(f64),
+ ) -> Result<Option<ModelPaths>, String> {
+     let present = |file: &ModelFile| fs::metadata(dir.join(file.name)).is_ok_and(|m| m.len() == file.bytes);
+-    if dir.join(VERIFIED_MARKER).is_file() && FILES.iter().all(present) {
+-        return Ok(Some(ModelPaths::in_dir(dir)));
++    if dir.join(VERIFIED_MARKER).is_file() && files.iter().all(present) {
++        return Ok(Some(ModelPaths::in_dir(dir, files)));
+     }
+     fs::create_dir_all(dir).map_err(|e| format!("Cannot create model directory: {e}"))?;
+     fs::remove_file(dir.join(VERIFIED_MARKER)).ok();
+ 
+-    let total: u64 = FILES.iter().map(|f| f.bytes).sum();
+-    let mut done: u64 = FILES.iter().filter(|f| present(f)).map(|f| f.bytes).sum();
++    let total: u64 = files.iter().map(|f| f.bytes).sum();
++    let mut done: u64 = files.iter().filter(|f| present(f)).map(|f| f.bytes).sum();
+     progress(done as f64 / total as f64);
+     let client = reqwest::Client::new();
+-    for file in &FILES {
++    for file in files {
+         let target = dir.join(file.name);
+         if present(file) && sha256(&target).is_ok_and(|h| h == file.sha256) {
+             continue;
+@@ -136,5 +205,5 @@ pub(crate) async fn fetch(
+     }
+     fs::write(dir.join(VERIFIED_MARKER), b"").ok();
+     progress(1.0);
+-    Ok(Some(ModelPaths::in_dir(dir)))
++    Ok(Some(ModelPaths::in_dir(dir, files)))
+ }
 diff --git a/src-tauri/src/transcription/pipeline.rs b/src-tauri/src/transcription/pipeline.rs
-index d23b823..7d6324d 100644
+index d23b823..76c34ef 100644
 --- a/src-tauri/src/transcription/pipeline.rs
 +++ b/src-tauri/src/transcription/pipeline.rs
-@@ -12,6 +12,13 @@ const FRAME: usize = 512;
- const SPEECH_LEAD_SAMPLES: i64 = 16_000;
+@@ -13,6 +13,30 @@ const SPEECH_LEAD_SAMPLES: i64 = 16_000;
  const SPEECH_CONTINUATION_LEAD_SAMPLES: i64 = 8_000;
  const SPEECH_TAIL_SAMPLES: i64 = 4_000;
-+/// The model (parakeet) uses context: a short pause only ends a piece once the piece is
-+/// this long. Pieces are cut at most at MAX_PIECE_SAMPLES, at a pause when there is one.
-+const MIN_PIECE_SAMPLES: i64 = 240_000;
-+/// A longer silence always ends a piece: given a long silence inside a piece, the model
-+/// tends to transcribe only one side of it.
-+const LONG_PAUSE_SAMPLES: i64 = 20_000;
-+const MAX_PIECE_SAMPLES: i64 = 480_000;
  
++/// How speech is cut into pieces for the model. A pause of at least 0.5 s ends a piece
++/// once the piece is `min_piece` long; a pause of `long_pause` always ends it. Pieces are
++/// cut at most at `max_piece`, at a pause when there is one.
++#[derive(Clone, Copy)]
++pub struct Cutting {
++    min_piece: i64,
++    long_pause: i64,
++    max_piece: i64,
++}
++
++impl Cutting {
++    /// parakeet uses context (15-30 s pieces). Given a long silence inside a piece, it
++    /// tends to transcribe only one side of it, so 1.25 s of silence always ends one.
++    pub const PARAKEET: Cutting = Cutting { min_piece: 240_000, long_pause: 20_000, max_piece: 480_000 };
++    /// ReazonSpeech, as on the other platforms: every pause ends a piece, at most 20 s.
++    pub const REAZONSPEECH: Cutting = Cutting { min_piece: 0, long_pause: 8_000, max_piece: 320_000 };
++}
++
++impl Default for Cutting {
++    fn default() -> Self {
++        Cutting::PARAKEET
++    }
++}
++
  /// Clean audiobook speech is separated from silence by energy. A bounded 30-second
  /// histogram follows the recording's noise floor.
-@@ -103,7 +110,8 @@ impl SpeechSegmenter {
+ pub struct EnergyVad {
+@@ -80,6 +104,7 @@ struct SpeechSegmenter {
+     speech: bool,
+     silence_start: Option<i64>,
+     continuation: bool,
++    cutting: Cutting,
+ }
+ 
+ impl SpeechSegmenter {
+@@ -103,7 +128,8 @@ impl SpeechSegmenter {
          }
          if probability < 0.35 {
              let silence = *self.silence_start.get_or_insert(frame_start);
 -            if self.position - silence >= 8_000 {
-+            let long_enough = silence - self.candidate_start.unwrap_or(silence) >= MIN_PIECE_SAMPLES;
-+            if self.position - silence >= 8_000 && (long_enough || self.position - silence >= LONG_PAUSE_SAMPLES) {
++            let long_enough = silence - self.candidate_start.unwrap_or(silence) >= self.cutting.min_piece;
++            if self.position - silence >= 8_000 && (long_enough || self.position - silence >= self.cutting.long_pause) {
                  let result = self.bounds(silence);
                  self.candidate_start = None;
                  self.silence_start = None;
-@@ -115,7 +123,7 @@ impl SpeechSegmenter {
+@@ -115,7 +141,7 @@ impl SpeechSegmenter {
              self.silence_start = None;
          }
          let candidate = self.candidate_start.unwrap();
 -        if self.position - candidate >= 320_000 {
-+        if self.position - candidate >= MAX_PIECE_SAMPLES {
++        if self.position - candidate >= self.cutting.max_piece {
              let end = self.silence_start.unwrap_or(self.position);
              let result = SpeechBounds { start: candidate, end, hard_cut: self.silence_start.is_none() };
              self.speech = self.silence_start.is_none();
-@@ -207,7 +215,18 @@ pub fn project_tokens(texts: &[String], timestamps: &[f32], segment_start: f64,
+@@ -207,7 +233,18 @@ pub fn project_tokens(texts: &[String], timestamps: &[f32], segment_start: f64,
          {
              continue;
          }
@@ -150,29 +480,157 @@ index d23b823..7d6324d 100644
      }
      tokens
  }
-@@ -230,7 +249,7 @@ impl Pipeline {
+@@ -226,12 +263,12 @@ pub struct Pipeline {
+ }
+ 
+ impl Pipeline {
+-    pub fn new(from: f64, duration: f64, audio_from: f64) -> Self {
++    pub fn new(from: f64, duration: f64, audio_from: f64, cutting: Cutting) -> Self {
          Pipeline {
              origin_sample: (audio_from * SAMPLE_RATE as f64 - 1e-8).ceil() as i64,
              duration,
 -            history: AudioHistory::new(24 * SAMPLE_RATE as usize),
+-            segmenter: SpeechSegmenter::default(),
 +            history: AudioHistory::new(48 * SAMPLE_RATE as usize),
-             segmenter: SpeechSegmenter::default(),
++            segmenter: SpeechSegmenter { cutting, ..Default::default() },
              vad: EnergyVad::new(),
              pending: VecDeque::new(),
+             scheduled_through: from,
+diff --git a/src/lib/MatchDialog.svelte b/src/lib/MatchDialog.svelte
+index f961af1..5571efe 100644
+--- a/src/lib/MatchDialog.svelte
++++ b/src/lib/MatchDialog.svelte
+@@ -1,7 +1,7 @@
+ <script lang="ts">
+   import { Channel, invoke } from "@tauri-apps/api/core";
+   import { ask, open } from "@tauri-apps/plugin-dialog";
+-  import { isWindows } from "./platform";
++  import { isLinux, isWindows } from "./platform";
+   import { sasayakiConfig, saveSasayakiConfig } from "./sasayakiConfig.svelte";
+   import type { BookInfo, SasayakiMatchData, SasayakiPlayback } from "./types";
+ 
+@@ -9,7 +9,7 @@
+     | { state: "downloading"; fraction: number }
+     | { state: "transcribing"; through: number; duration: number; remaining: number | null }
+     | { state: "aligning" };
+-  type Transcript = { through: number; duration: number };
++  type Transcript = { through: number; duration: number; model?: string };
+ 
+   let { onMatched }: { onMatched: () => void } = $props();
+ 
+@@ -28,8 +28,35 @@
+ 
+   const canTranscribe = $derived(transcriberStatus === "available");
+   const file = $derived(useAudio ? audioFile : subtitleFile);
++  // Linux build (0019): the speech model. A saved transcription of the other model is
++  // started over; one saved without a model was made by ReazonSpeech (earlier builds).
++  const MODELS = [
++    {
++      id: "parakeet",
++      label: "parakeet",
++      description:
++        "NVIDIA parakeet-tdt_ctc-0.6b-ja. Hears more of the text (names, short phrases after a pause) and writes words in kanji like the book, so more of the book is matched. 630 MB download.",
++    },
++    {
++      id: "reazonspeech",
++      label: "ReazonSpeech",
++      description:
++        "ReazonSpeech k2 v2, the model Hoshi Reader uses on Android. Smaller (160 MB download) and about twice as fast, but more of the book stays unmatched: it drops some names and short phrases, and writes some words in kana (あした for 明日).",
++    },
++  ] as const;
++  const model = $derived(MODELS.find((entry) => entry.id === sasayakiConfig.sasayakiTranscriptionModel) ?? MODELS[0]);
++  const transcriptModel = $derived(
++    isLinux && transcript ? (MODELS.find((entry) => entry.id === (transcript?.model ?? "reazonspeech")) ?? null) : null,
++  );
++  const otherModel = $derived(transcriptModel !== null && transcriptModel.id !== model.id);
++  function setModel(id: (typeof MODELS)[number]["id"]) {
++    sasayakiConfig.sasayakiTranscriptionModel = id;
++    saveSasayakiConfig();
++  }
++
+   const resumable = $derived(
+     useAudio &&
++      !otherModel &&
+       transcript !== null &&
+       transcript.through > 0 &&
+       !(transcript.duration > 0 && transcript.through + 1.5 >= transcript.duration),
+@@ -86,6 +113,7 @@
+           path: file,
+           performance: sasayakiConfig.sasayakiTranscriptionPerformance,
+           mergeShortCues,
++          model: isLinux ? model.id : null,
+           onProgress,
+         });
+       else await invoke("sasayaki_match", { id: bookId, path: file, mergeShortCues });
+@@ -192,6 +220,32 @@
+         </div>
+       {/if}
+ 
++      {#if isLinux && useAudio}
++        <div class="flex flex-col gap-1.5">
++          <div class="flex items-center justify-between gap-3">
++            <span class="text-sm">Model</span>
++            <div class="join">
++              {#each MODELS as entry (entry.id)}
++                <button
++                  class="btn join-item btn-sm {model.id === entry.id ? 'btn-active' : ''}"
++                  disabled={isMatching}
++                  onclick={() => setModel(entry.id)}
++                >
++                  {entry.label}
++                </button>
++              {/each}
++            </div>
++          </div>
++          <span class="text-xs text-base-content/60">{model.description}</span>
++          {#if otherModel && transcriptModel}
++            <span class="text-xs text-warning">
++              The saved transcription was made with {transcriptModel.label}. Match transcribes the audio again with
++              {model.label}.
++            </span>
++          {/if}
++        </div>
++      {/if}
++
+       <div
+         class="flex items-center justify-between gap-3"
+         title={useAudio
 diff --git a/src/lib/aboutLicensesLinux.ts b/src/lib/aboutLicensesLinux.ts
-index dc95cae..9a11758 100644
+index dc95cae..54caabb 100644
 --- a/src/lib/aboutLicensesLinux.ts
 +++ b/src/lib/aboutLicensesLinux.ts
-@@ -17,9 +17,9 @@ export const aboutLicensesLinux = [
+@@ -17,7 +17,13 @@ export const aboutLicensesLinux = [
          "text": null
        },
        {
 -        "name": "ReazonSpeech k2 v2 (speech model, downloaded on first use)",
--        "license": "Apache-2.0",
--        "url": "https://huggingface.co/reazon-research/reazonspeech-k2-v2",
 +        "name": "NVIDIA parakeet-tdt_ctc-0.6b-ja (speech model, converted to sherpa-onnx and quantized to int8; downloaded on first use)",
 +        "license": "CC-BY-4.0",
 +        "url": "https://huggingface.co/nvidia/parakeet-tdt_ctc-0.6b-ja",
++        "text": null
++      },
++      {
++        "name": "ReazonSpeech k2 v2 (speech model, downloaded on first use when chosen)",
+         "license": "Apache-2.0",
+         "url": "https://huggingface.co/reazon-research/reazonspeech-k2-v2",
          "text": null
-       },
-       {
+diff --git a/src/lib/sasayakiConfig.svelte.ts b/src/lib/sasayakiConfig.svelte.ts
+index d2487db..dd3ae14 100644
+--- a/src/lib/sasayakiConfig.svelte.ts
++++ b/src/lib/sasayakiConfig.svelte.ts
+@@ -16,6 +16,7 @@ export type SasayakiConfig = {
+   sasayakiAudioFormat: "mp3" | "opus";
+   sasayakiTranscriptionPerformance: number;
+   sasayakiMergeShortCues: number;
++  sasayakiTranscriptionModel: "parakeet" | "reazonspeech";
+ };
+ 
+ const defaults: SasayakiConfig = {
+@@ -34,6 +35,7 @@ const defaults: SasayakiConfig = {
+   sasayakiAudioFormat: "mp3",
+   sasayakiTranscriptionPerformance: 1,
+   sasayakiMergeShortCues: 1,
++  sasayakiTranscriptionModel: "parakeet",
+ };
+ 
+ const store = persisted<SasayakiConfig>("sasayaki.config", defaults);
