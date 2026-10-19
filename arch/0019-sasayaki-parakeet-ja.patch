@@ -1,0 +1,178 @@
+diff --git a/src-tauri/src/transcriber/linux.rs b/src-tauri/src/transcriber/linux.rs
+index e07a971..d27c4f4 100644
+--- a/src-tauri/src/transcriber/linux.rs
++++ b/src-tauri/src/transcriber/linux.rs
+@@ -1,5 +1,5 @@
+-//! Linux transcription backend: sherpa-onnx with the ReazonSpeech model (see
+-//! `crate::transcription`). The model (~160 MB) is downloaded on first use into the app's
++//! Linux transcription backend: sherpa-onnx with NVIDIA's parakeet-tdt_ctc-0.6b-ja model
++//! (see `crate::transcription`). The model (~630 MB) is downloaded on first use into the app's
+ //! cache directory and checked with SHA-256; after that everything runs offline.
+ //!
+ //! Built without the `transcription` feature, transcription reports "unsupported".
+@@ -58,8 +58,11 @@ pub fn start(
+         .path()
+         .app_cache_dir()
+         .unwrap_or_else(|_| std::env::temp_dir())
+-        .join("Models")
+-        .join("reazonspeech-k2-v2-int8");
++        .join("Models");
++    for old in crate::transcription::model::OLD_MODELS {
++        std::fs::remove_dir_all(model_dir.join(old)).ok();
++    }
++    let model_dir = model_dir.join(crate::transcription::model::MODEL_NAME);
+     let stop = Arc::new(AtomicBool::new(false));
+     let flag = stop.clone();
+     tauri::async_runtime::spawn(async move {
+diff --git a/src-tauri/src/transcription/mod.rs b/src-tauri/src/transcription/mod.rs
+index be07601..516dc16 100644
+--- a/src-tauri/src/transcription/mod.rs
++++ b/src-tauri/src/transcription/mod.rs
+@@ -1,4 +1,4 @@
+-// On-device Sasayaki transcription for Linux: sherpa-onnx + ReazonSpeech k2 v2,
++// On-device Sasayaki transcription for Linux: sherpa-onnx + parakeet-tdt_ctc-0.6b-ja,
+ // following the pipeline of Hoshi Reader Android. Used by transcriber/linux.rs; the
+ // transcript is aligned to the book by the shared aligner (aligner.rs).
+ 
+@@ -35,7 +35,7 @@ fn recognizer(paths: &model::ModelPaths, threads: i32) -> Result<OfflineRecogniz
+         tokens: path(&paths.tokens),
+         num_threads: threads,
+         provider: Some("cpu".into()),
+-        model_type: Some("transducer".into()),
++        model_type: Some("nemo_transducer".into()),
+         ..Default::default()
+     };
+     config.decoding_method = Some("greedy_search".into());
+diff --git a/src-tauri/src/transcription/model.rs b/src-tauri/src/transcription/model.rs
+index 747a2b8..3522f12 100644
+--- a/src-tauri/src/transcription/model.rs
++++ b/src-tauri/src/transcription/model.rs
+@@ -1,5 +1,6 @@
+-// ReazonSpeech k2 v2 (Apache-2.0) model files: the same pinned revision and checksums
+-// as Hoshi Reader Android, downloaded on first use and verified with SHA-256.
++// NVIDIA parakeet-tdt_ctc-0.6b-ja (CC-BY-4.0), TDT branch exported to sherpa-onnx and
++// quantized to int8 (see the model release's README). Downloaded on first use from this
++// project's GitHub release and verified with SHA-256.
+ 
+ use std::fs;
+ use std::io::Write;
+@@ -8,7 +9,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
+ 
+ use sha2::{Digest, Sha256};
+ 
+-const BASE: &str = "https://huggingface.co/reazon-research/reazonspeech-k2-v2/resolve/291488c8151be24d7da4bf7af26e533fad96e407/";
++const BASE: &str = "https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-/releases/download/model-parakeet-ja-1/";
++
++/// Directory name under the cache's Models folder; also used to remove older models.
++pub const MODEL_NAME: &str = "parakeet-tdt_ctc-0.6b-ja-int8";
++/// Models of earlier builds, removed once this one is in place.
++pub const OLD_MODELS: [&str; 1] = ["reazonspeech-k2-v2-int8"];
+ 
+ pub struct ModelFile {
+     pub name: &'static str,
+@@ -18,14 +24,14 @@ pub struct ModelFile {
+ }
+ 
+ pub const FILES: [ModelFile; 4] = [
+-    ModelFile { name: "encoder.int8.onnx", remote: "encoder-epoch-99-avg-1.int8.onnx", bytes: 154_670_139,
+-        sha256: "2c7bd08a8a99f9ddd0d9e458456577b1f6279214e51426f114f9eced44c54e1d" },
+-    ModelFile { name: "decoder.int8.onnx", remote: "decoder-epoch-99-avg-1.int8.onnx", bytes: 2_959_337,
+-        sha256: "8f0bff94d38797b03b762634ed03211a8e303d06cc4603cdd0cf4199d6eb1485" },
+-    ModelFile { name: "joiner.int8.onnx", remote: "joiner-epoch-99-avg-1.int8.onnx", bytes: 2_696_970,
+-        sha256: "49cc7ea1d3d35a40a27442db5e89996da64bf0e683a903dce76e99e57a12e4de" },
+-    ModelFile { name: "tokens.txt", remote: "tokens.txt", bytes: 45_754,
+-        sha256: "2c3ac659818a48a0c04010e0593bbc4d7c8a24a054340b01131499c05fd52def" },
++    ModelFile { name: "encoder.int8.onnx", remote: "encoder.int8.onnx", bytes: 652_467_728,
++        sha256: "2780b59886febf5b00bfb411a7ed9e6ef569b871739fcc58e7c7b42398f38277" },
++    ModelFile { name: "decoder.int8.onnx", remote: "decoder.int8.onnx", bytes: 8_568_472,
++        sha256: "396758f94454d0f2491a1414747d4670b33c543d50efd1565bd28657b387a308" },
++    ModelFile { name: "joiner.int8.onnx", remote: "joiner.int8.onnx", bytes: 3_057_995,
++        sha256: "d2e2f86466d3d1bdee245c791131a403f6061cb3e588b60dea23648878b8e0af" },
++    ModelFile { name: "tokens.txt", remote: "tokens.txt", bytes: 28_557,
++        sha256: "732f64c53909f2620c713f4106b487d92e6f54a6915b3cd3d1dbd32f9f4f392a" },
+ ];
+ 
+ const VERIFIED_MARKER: &str = ".verified";
+diff --git a/src-tauri/src/transcription/pipeline.rs b/src-tauri/src/transcription/pipeline.rs
+index d23b823..7d6324d 100644
+--- a/src-tauri/src/transcription/pipeline.rs
++++ b/src-tauri/src/transcription/pipeline.rs
+@@ -12,6 +12,13 @@ const FRAME: usize = 512;
+ const SPEECH_LEAD_SAMPLES: i64 = 16_000;
+ const SPEECH_CONTINUATION_LEAD_SAMPLES: i64 = 8_000;
+ const SPEECH_TAIL_SAMPLES: i64 = 4_000;
++/// The model (parakeet) uses context: a short pause only ends a piece once the piece is
++/// this long. Pieces are cut at most at MAX_PIECE_SAMPLES, at a pause when there is one.
++const MIN_PIECE_SAMPLES: i64 = 240_000;
++/// A longer silence always ends a piece: given a long silence inside a piece, the model
++/// tends to transcribe only one side of it.
++const LONG_PAUSE_SAMPLES: i64 = 20_000;
++const MAX_PIECE_SAMPLES: i64 = 480_000;
+ 
+ /// Clean audiobook speech is separated from silence by energy. A bounded 30-second
+ /// histogram follows the recording's noise floor.
+@@ -103,7 +110,8 @@ impl SpeechSegmenter {
+         }
+         if probability < 0.35 {
+             let silence = *self.silence_start.get_or_insert(frame_start);
+-            if self.position - silence >= 8_000 {
++            let long_enough = silence - self.candidate_start.unwrap_or(silence) >= MIN_PIECE_SAMPLES;
++            if self.position - silence >= 8_000 && (long_enough || self.position - silence >= LONG_PAUSE_SAMPLES) {
+                 let result = self.bounds(silence);
+                 self.candidate_start = None;
+                 self.silence_start = None;
+@@ -115,7 +123,7 @@ impl SpeechSegmenter {
+             self.silence_start = None;
+         }
+         let candidate = self.candidate_start.unwrap();
+-        if self.position - candidate >= 320_000 {
++        if self.position - candidate >= MAX_PIECE_SAMPLES {
+             let end = self.silence_start.unwrap_or(self.position);
+             let result = SpeechBounds { start: candidate, end, hard_cut: self.silence_start.is_none() };
+             self.speech = self.silence_start.is_none();
+@@ -207,7 +215,18 @@ pub fn project_tokens(texts: &[String], timestamps: &[f32], segment_start: f64,
+         {
+             continue;
+         }
+-        tokens.push(Token { text, start, end: next.max(start).min(segment_end) });
++        // Sentence pieces can hold several characters (っている): one token per character,
++        // spread over the piece's interval. Spaces and punctuation are dropped.
++        let end = next.max(start).min(segment_end);
++        let characters: Vec<char> = text.chars().filter(|c| c.is_alphanumeric()).collect();
++        let step = (end - start) / characters.len().max(1) as f64;
++        for (position, character) in characters.iter().enumerate() {
++            tokens.push(Token {
++                text: character.to_string(),
++                start: start + step * position as f64,
++                end: start + step * (position + 1) as f64,
++            });
++        }
+     }
+     tokens
+ }
+@@ -230,7 +249,7 @@ impl Pipeline {
+         Pipeline {
+             origin_sample: (audio_from * SAMPLE_RATE as f64 - 1e-8).ceil() as i64,
+             duration,
+-            history: AudioHistory::new(24 * SAMPLE_RATE as usize),
++            history: AudioHistory::new(48 * SAMPLE_RATE as usize),
+             segmenter: SpeechSegmenter::default(),
+             vad: EnergyVad::new(),
+             pending: VecDeque::new(),
+diff --git a/src/lib/aboutLicensesLinux.ts b/src/lib/aboutLicensesLinux.ts
+index dc95cae..9a11758 100644
+--- a/src/lib/aboutLicensesLinux.ts
++++ b/src/lib/aboutLicensesLinux.ts
+@@ -17,9 +17,9 @@ export const aboutLicensesLinux = [
+         "text": null
+       },
+       {
+-        "name": "ReazonSpeech k2 v2 (speech model, downloaded on first use)",
+-        "license": "Apache-2.0",
+-        "url": "https://huggingface.co/reazon-research/reazonspeech-k2-v2",
++        "name": "NVIDIA parakeet-tdt_ctc-0.6b-ja (speech model, converted to sherpa-onnx and quantized to int8; downloaded on first use)",
++        "license": "CC-BY-4.0",
++        "url": "https://huggingface.co/nvidia/parakeet-tdt_ctc-0.6b-ja",
+         "text": null
+       },
+       {

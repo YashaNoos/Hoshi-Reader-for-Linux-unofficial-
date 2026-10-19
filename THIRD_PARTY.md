@@ -11,7 +11,7 @@ as well.
 | Component | Used for | License | Link |
 |---|---|---|---|
 | **Hoshi Reader Android** (HuangAntimony) | The Sasayaki transcription pipeline (voice-activity segmentation, parallel recognition, stitching) is a port of its approach and constants. | GPL-3.0 | https://github.com/HuangAntimony/Hoshi-Reader-Android |
-| **ReazonSpeech k2 v2** (Reazon Research) | Japanese speech recognition model, int8 build. Downloaded on first use from a pinned Hugging Face revision (`291488c8151be24d7da4bf7af26e533fad96e407`) and verified with SHA-256. Not included in this repository or in the package. | Apache-2.0 | https://huggingface.co/reazon-research/reazonspeech-k2-v2 |
+| **parakeet-tdt_ctc-0.6b-ja** (NVIDIA) | Japanese speech recognition model (trained on ReazonSpeech v2.0). Converted to sherpa-onnx (transducer branch only) and quantized to int8 for this build; about 630 MB. Downloaded on first use from this repository's [model release](https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-/releases/tag/model-parakeet-ja-1) and verified with SHA-256. Not included in the package. | CC-BY-4.0 | https://huggingface.co/nvidia/parakeet-tdt_ctc-0.6b-ja |
 | **sherpa-onnx** (k2-fsa) | Speech recognition runtime (Rust crate `sherpa-onnx` 1.13.8 and the prebuilt static library for the same version, linked into the binary). | Apache-2.0 | https://github.com/k2-fsa/sherpa-onnx |
 | **ONNX Runtime** (Microsoft) | Inference engine contained in the sherpa-onnx static library. | MIT | https://github.com/microsoft/onnxruntime |
 | **Symphonia** | Audio decoding (mp3, AAC/m4b/m4a, ALAC, FLAC, Ogg Vorbis, WAV) for transcription and duration reading. | MPL-2.0 | https://github.com/pdeljanov/Symphonia |
