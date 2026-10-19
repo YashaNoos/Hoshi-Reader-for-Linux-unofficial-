@@ -152,6 +152,8 @@ Each patch in [`arch/`](arch) is one self-contained change:
 | `0016-linux-lookup-highlight-offset` | In vertical text WebKitGTK draws characters about 0.13em below their layout boxes, so highlights looked shifted up. The lookup highlight is moved down onto the characters. |
 | `0017-linux-dark-theme-selected-buttons` | In the dark theme, the selected choice in segmented buttons (Layout/Display/Popup, Paginated/Continuous, …) is shown lighter so it stands out. Upstream only darkens it slightly, which is barely visible on a dark background. |
 | `0018-sasayaki-merge-short-cues` | Sasayaki: new "Merge short cues" setting in Match, Transcription. The default, ≤ 1 character, cuts cues exactly like upstream. Raised to 2–6, a comma-separated piece that short is not made a cue on its own: a short opening (だが、) joins the text after it, a short ending (、きっと。) the text before it. Not in upstream. |
+| `0019-sasayaki-split-at-relative-pauses` | Transcription: the audio is also cut at pauses that are quiet compared with the narrator's voice (breaths, room tone), not only at near-silence. The model often transcribed only one side of such a pause and dropped the other (for example a whole clause after a breath). |
+| `0020-sasayaki-aligner-unlikely-matches` | Sasayaki matching: a lone kana that matches between differences is ignored when it cannot belong there. Example: the transcript writes あした for the book's 明日, and its あ was matched to the book's next あ (「あ、明日？」), giving that cue the wrong audio. Not in upstream. |
 
 The compiler flags in the PKGBUILD work around newer GCC versions (15/16) breaking
 upstream's C++ dictionary engine because of missing standard `#include`s.

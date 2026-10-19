@@ -41,6 +41,8 @@ source=("$pkgname::git+$_upstream_url.git#tag=v$pkgver"
         '0016-linux-lookup-highlight-offset.patch'
         '0017-linux-dark-theme-selected-buttons.patch'
         '0018-sasayaki-merge-short-cues.patch'
+        '0019-sasayaki-split-at-relative-pauses.patch'
+        '0020-sasayaki-aligner-unlikely-matches.patch'
         # prebuilt static library for Sasayaki transcription; the Rust crate links it
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2")
 noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
@@ -64,6 +66,8 @@ sha256sums=('SKIP'
             '0b294620de781b316fd593a3ac2d369399a4c119b782c53ccafffa1d5ee1d2fe'
             '98188e4ee491aacb0917190ad0b0b948f7b3832af5d81b6691b5442785d70060'
             'e2ec9524e8ab3d2ee285ae823ca70d51a17ffc04fe1260128351692ee1de5154'
+            '30b869e59e449f7bf7ec72fa3dbb214f3c47f7748610c42ad91b58df4442a8a3'
+            '116509f4e2cb96afdaa3704969db13035fd0cefcc704aa7d1bb3ca2f2db04a21'
             'e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6')
 
 prepare() {
