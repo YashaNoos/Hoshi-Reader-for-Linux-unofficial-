@@ -1,0 +1,191 @@
+diff --git a/src-tauri/src/aligner.rs b/src-tauri/src/aligner.rs
+index fc0d1fe..e21568d 100644
+--- a/src-tauri/src/aligner.rs
++++ b/src-tauri/src/aligner.rs
+@@ -66,7 +66,10 @@ struct Span {
+     upper: usize,
+ }
+ 
+-pub fn align(source: &Source, tokens: &[SasayakiToken]) -> SasayakiMatchData {
++/// `merge_short`: comma-separated pieces of this many characters or fewer are not cut
++/// into their own cue (a short opening like だが、 joins the text after it, a short
++/// ending like 、きっと。 the text before it). 0 keeps upstream's cutting.
++pub fn align(source: &Source, tokens: &[SasayakiToken], merge_short: usize) -> SasayakiMatchData {
+     let book: Vec<char> = source
+         .text
+         .iter()
+@@ -95,7 +98,7 @@ pub fn align(source: &Source, tokens: &[SasayakiToken]) -> SasayakiMatchData {
+         }
+     }
+ 
+-    cut(source, &times)
++    cut(source, &times, merge_short)
+ }
+ 
+ fn normalize(character: char) -> char {
+@@ -291,13 +294,13 @@ fn difference(old: &[char], new: &[char]) -> (Vec<bool>, Vec<bool>) {
+     (removed, inserted)
+ }
+ 
+-fn cut(source: &Source, times: &[Option<Timing>]) -> SasayakiMatchData {
++fn cut(source: &Source, times: &[Option<Timing>], merge_short: usize) -> SasayakiMatchData {
+     let mut matches: Vec<SasayakiMatch> = Vec::new();
+     let mut unmatched = 0;
+     for chapter in &source.chapters {
+         let mut start = chapter.start;
+         for index in chapter.start..chapter.end() {
+-            if !is_boundary(source, chapter, start, index) {
++            if !is_boundary(source, chapter, start, index, merge_short) {
+                 continue;
+             }
+ 
+@@ -335,15 +338,40 @@ fn cut(source: &Source, times: &[Option<Timing>]) -> SasayakiMatchData {
+     }
+ }
+ 
+-fn is_boundary(source: &Source, chapter: &Chapter, start: usize, index: usize) -> bool {
++fn is_boundary(
++    source: &Source,
++    chapter: &Chapter,
++    start: usize,
++    index: usize,
++    merge_short: usize,
++) -> bool {
+     if source.sentence_ends[index] || index == chapter.end() - 1 {
+         return true;
+     }
+ 
++    // Upstream already keeps 1-character pieces together; 0 and 1 behave the same.
++    let merge_short = merge_short.max(1);
+     source.segment_ends[index]
+-        && index > start
++        && index - start >= merge_short
+         && index + 2 < chapter.end()
+-        && !source.sentence_ends[index + 1]
++        && !short_sentence_tail(source, chapter, index, merge_short)
++}
++
++/// True when the piece after the comma at `index` is the last one of its sentence and
++/// has `merge_short` characters or fewer: it stays with the cue before it.
++fn short_sentence_tail(source: &Source, chapter: &Chapter, index: usize, merge_short: usize) -> bool {
++    for next in index + 1..chapter.end() {
++        if next - index > merge_short {
++            return false;
++        }
++        if source.sentence_ends[next] || next == chapter.end() - 1 {
++            return true;
++        }
++        if source.segment_ends[next] {
++            return false;
++        }
++    }
++    false
+ }
+ 
+ fn time(
+diff --git a/src-tauri/src/transcriber.rs b/src-tauri/src/transcriber.rs
+index 0f6eb86..e206207 100644
+--- a/src-tauri/src/transcriber.rs
++++ b/src-tauri/src/transcriber.rs
+@@ -104,6 +104,7 @@ pub async fn sasayaki_transcribe(
+     id: String,
+     path: String,
+     performance: i32,
++    merge_short_cues: Option<usize>,
+     on_progress: Channel<Progress>,
+ ) -> Result<(), String> {
+     let cancel = CancellationToken::new();
+@@ -190,7 +191,9 @@ pub async fn sasayaki_transcribe(
+     progress(Progress::Aligning);
+     let book = app.clone();
+     let result = tauri::async_runtime::spawn_blocking(move || {
+-        sasayaki::build_source(&book, &id).map(|source| aligner::align(&source, &transcript.tokens))
++        sasayaki::build_source(&book, &id).map(|source| {
++            aligner::align(&source, &transcript.tokens, merge_short_cues.unwrap_or(0))
++        })
+     })
+     .await
+     .unwrap()?;
+diff --git a/src/lib/MatchDialog.svelte b/src/lib/MatchDialog.svelte
+index a108af4..40e03bd 100644
+--- a/src/lib/MatchDialog.svelte
++++ b/src/lib/MatchDialog.svelte
+@@ -67,6 +67,13 @@
+     else subtitleFile = result;
+   }
+ 
++  // Linux build (0018): 0 = upstream's cutting; 1 would behave the same, so the steps are 0, 2…6.
++  const MAX_MERGE_SHORT_CUES = 6;
++  function setMergeShortCues(value: number) {
++    sasayakiConfig.sasayakiMergeShortCues = value;
++    saveSasayakiConfig();
++  }
++
+   async function start() {
+     isMatching = true;
+     matchError = "";
+@@ -77,6 +84,7 @@
+           id: bookId,
+           path: file,
+           performance: sasayakiConfig.sasayakiTranscriptionPerformance,
++          mergeShortCues: sasayakiConfig.sasayakiMergeShortCues,
+           onProgress,
+         });
+       else await invoke("sasayaki_match", { id: bookId, path: file });
+@@ -183,6 +191,36 @@
+         </div>
+       {/if}
+ 
++      {#if useAudio}
++        <div
++          class="flex items-center justify-between gap-3"
++          title="Comma-separated pieces this short (だが、, 、きっと。) are joined to the text next to them instead of becoming their own cue. Applies the next time you press Match."
++        >
++          <span class="text-sm">Merge short cues</span>
++          <div class="join">
++            <button
++              class="btn join-item btn-sm"
++              aria-label="Fewer characters"
++              disabled={isMatching || sasayakiConfig.sasayakiMergeShortCues === 0}
++              onclick={() => setMergeShortCues(sasayakiConfig.sasayakiMergeShortCues <= 2 ? 0 : sasayakiConfig.sasayakiMergeShortCues - 1)}
++            >
++              −
++            </button>
++            <span class="btn join-item btn-sm pointer-events-none w-24 whitespace-nowrap tabular-nums">
++              {sasayakiConfig.sasayakiMergeShortCues === 0 ? "Off" : `≤ ${sasayakiConfig.sasayakiMergeShortCues} chars`}
++            </span>
++            <button
++              class="btn join-item btn-sm"
++              aria-label="More characters"
++              disabled={isMatching || sasayakiConfig.sasayakiMergeShortCues >= MAX_MERGE_SHORT_CUES}
++              onclick={() => setMergeShortCues(Math.max(2, sasayakiConfig.sasayakiMergeShortCues + 1))}
++            >
++              +
++            </button>
++          </div>
++        </div>
++      {/if}
++
+       <div class="flex items-center justify-between gap-3">
+         <span class="min-w-0 truncate text-sm">{file ? fileName(file) : "No file selected"}</span>
+         <button class="btn btn-outline btn-sm" onclick={pickFile} disabled={isMatching}>Open</button>
+diff --git a/src/lib/sasayakiConfig.svelte.ts b/src/lib/sasayakiConfig.svelte.ts
+index 5c95fb7..1843c90 100644
+--- a/src/lib/sasayakiConfig.svelte.ts
++++ b/src/lib/sasayakiConfig.svelte.ts
+@@ -15,6 +15,7 @@ export type SasayakiConfig = {
+   sasayakiDarkBackgroundColor: string;
+   sasayakiAudioFormat: "mp3" | "opus";
+   sasayakiTranscriptionPerformance: number;
++  sasayakiMergeShortCues: number;
+ };
+ 
+ const defaults: SasayakiConfig = {
+@@ -32,6 +33,7 @@ const defaults: SasayakiConfig = {
+   sasayakiDarkBackgroundColor: "#87cefa66",
+   sasayakiAudioFormat: "mp3",
+   sasayakiTranscriptionPerformance: 1,
++  sasayakiMergeShortCues: 0,
+ };
+ 
+ const store = persisted<SasayakiConfig>("sasayaki.config", defaults);
