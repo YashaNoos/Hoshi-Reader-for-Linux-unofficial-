@@ -1,5 +1,5 @@
 diff --git a/src-tauri/Cargo.lock b/src-tauri/Cargo.lock
-index ee05904..f6a60a4 100644
+index baf6bd4..e311b1b 100644
 --- a/src-tauri/Cargo.lock
 +++ b/src-tauri/Cargo.lock
 @@ -1932,6 +1932,7 @@ dependencies = [
@@ -11,11 +11,11 @@ index ee05904..f6a60a4 100644
   "image",
   "keyring-core",
 diff --git a/src-tauri/Cargo.toml b/src-tauri/Cargo.toml
-index 9d6b09c..5f7ad6b 100644
+index f164549..7e73681 100644
 --- a/src-tauri/Cargo.toml
 +++ b/src-tauri/Cargo.toml
-@@ -56,6 +56,8 @@ sherpa-onnx = { version = "1.13.8", optional = true }
- similar = { version = "2", optional = true }
+@@ -55,6 +55,8 @@ apple-native-keyring-store = { version = "1", features = ["keychain"] }
+ sherpa-onnx = { version = "1.13.8", optional = true }
  zbus-secret-service-keyring-store = { version = "1", features = ["rt-async-io-crypto-rust"] }
  arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"] }
 +# Wayland: anchor context menus to our own window (see context_menu.rs)
@@ -73,10 +73,10 @@ index 0000000..642ff36
 +    .map_err(|error| error.to_string())
 +}
 diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
-index 08b567f..391aeb6 100644
+index 897e757..1c64046 100644
 --- a/src-tauri/src/lib.rs
 +++ b/src-tauri/src/lib.rs
-@@ -4,6 +4,8 @@ mod anki;
+@@ -5,6 +5,8 @@ mod anki;
  mod backup;
  mod book;
  mod clipboard;
@@ -85,9 +85,9 @@ index 08b567f..391aeb6 100644
  mod crash;
  mod css;
  mod dict;
-@@ -154,6 +156,8 @@ pub fn run() {
+@@ -147,6 +149,8 @@ pub fn run() {
+             transcriber::sasayaki_clear_transcript,
              transcriber::sasayaki_pause_transcription,
-             #[cfg(any(target_os = "macos", all(target_os = "linux", feature = "transcription")))]
              transcriber::sasayaki_transcribe,
 +            #[cfg(target_os = "linux")]
 +            context_menu::popup_menu_at_pointer,
@@ -116,7 +116,7 @@ index 685851a..cc113a8 100644
  
    async function moveTo(ids: string[], name: string | null) {
 diff --git a/src/lib/Popup.svelte b/src/lib/Popup.svelte
-index ea6db73..245d070 100644
+index 18d644a..a773bcc 100644
 --- a/src/lib/Popup.svelte
 +++ b/src/lib/Popup.svelte
 @@ -1,6 +1,7 @@
@@ -127,7 +127,7 @@ index ea6db73..245d070 100644
    import { Pause, Play, RotateCcw, StepForward } from "@lucide/svelte";
    import type {
      FontInfo,
-@@ -125,7 +126,7 @@
+@@ -131,7 +132,7 @@
      const menu = await Menu.new({ items });
      menuOpen = true;
      try {
@@ -137,7 +137,7 @@ index ea6db73..245d070 100644
        menuOpen = false;
      }
 diff --git a/src/lib/Reader.svelte b/src/lib/Reader.svelte
-index 4ccc0b1..659787e 100644
+index d430db3..19fbce4 100644
 --- a/src/lib/Reader.svelte
 +++ b/src/lib/Reader.svelte
 @@ -3,6 +3,7 @@
@@ -148,7 +148,7 @@ index 4ccc0b1..659787e 100644
    import { getCurrentWindow } from "@tauri-apps/api/window";
    import { message, open, save } from "@tauri-apps/plugin-dialog";
    import {
-@@ -1118,7 +1119,7 @@
+@@ -1119,7 +1120,7 @@
          action: () => source.postMessage({ hoshi: "create-highlight", id: crypto.randomUUID().toUpperCase(), color }, "*"),
        })) },
      ] });

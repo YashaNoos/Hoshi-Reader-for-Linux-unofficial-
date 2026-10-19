@@ -73,10 +73,10 @@ index 2e4fef6..3604cce 100644
 +    }
  }
 diff --git a/src/App.svelte b/src/App.svelte
-index ce9108d..d552c01 100644
+index 06856f4..d69ffe8 100644
 --- a/src/App.svelte
 +++ b/src/App.svelte
-@@ -99,11 +99,17 @@
+@@ -100,11 +100,17 @@
      if (errors.length) await message(errors.join("\n"), { title: "Error", kind: "error" });
    }
  

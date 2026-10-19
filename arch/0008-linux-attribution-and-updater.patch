@@ -100,10 +100,10 @@ index bc5ab3f..8cc726c 100644
            {#if entry.text}
 diff --git a/src/lib/aboutLicensesLinux.ts b/src/lib/aboutLicensesLinux.ts
 new file mode 100644
-index 0000000..1f6c57e
+index 0000000..dc95cae
 --- /dev/null
 +++ b/src/lib/aboutLicensesLinux.ts
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,63 @@
 +// Shown on Linux builds only, in addition to aboutLicenses. These are the components the
 +// unofficial Linux port adds (see THIRD_PARTY.md in the Linux repository for details).
 +export const aboutLicensesLinux = [
@@ -144,12 +144,6 @@ index 0000000..1f6c57e
 +        "name": "Symphonia",
 +        "license": "MPL-2.0",
 +        "url": "https://github.com/pdeljanov/Symphonia",
-+        "text": null
-+      },
-+      {
-+        "name": "similar",
-+        "license": "Apache-2.0",
-+        "url": "https://github.com/mitsuhiko/similar",
 +        "text": null
 +      },
 +      {

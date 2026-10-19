@@ -1,8 +1,8 @@
 diff --git a/src-tauri/src/anki.rs b/src-tauri/src/anki.rs
-index fa5d7cd..f4ffedb 100644
+index 27b195d..60a7310 100644
 --- a/src-tauri/src/anki.rs
 +++ b/src-tauri/src/anki.rs
-@@ -942,7 +942,10 @@ pub async fn anki_mine(
+@@ -963,7 +963,10 @@ pub async fn anki_mine(
              });
          if let Some((path, ext, bytes)) = cover {
              let filename = format!("hoshi_cover_{}.{ext}", sha1_hex(&bytes));

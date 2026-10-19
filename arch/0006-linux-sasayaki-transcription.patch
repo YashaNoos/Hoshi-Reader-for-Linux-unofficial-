@@ -1,5 +1,5 @@
 diff --git a/src-tauri/Cargo.lock b/src-tauri/Cargo.lock
-index aa2aa14..ee05904 100644
+index 29e68fd..baf6bd4 100644
 --- a/src-tauri/Cargo.lock
 +++ b/src-tauri/Cargo.lock
 @@ -8,13 +8,24 @@ version = "2.0.1"
@@ -230,7 +230,7 @@ index aa2aa14..ee05904 100644
  ]
  
  [[package]]
-@@ -1845,8 +1947,10 @@ dependencies = [
+@@ -1846,8 +1948,9 @@ dependencies = [
   "rusqlite",
   "serde",
   "serde_json",
@@ -238,11 +238,10 @@ index aa2aa14..ee05904 100644
 + "sha1 0.11.0",
   "sha2 0.11.0",
 + "sherpa-onnx",
-+ "similar",
   "symphonia",
   "tauri",
   "tauri-build",
-@@ -2188,6 +2292,15 @@ dependencies = [
+@@ -2189,6 +2292,15 @@ dependencies = [
   "cfb 0.14.0",
  ]
  
@@ -258,7 +257,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "inout"
  version = "0.2.2"
-@@ -2350,6 +2463,16 @@ dependencies = [
+@@ -2351,6 +2463,16 @@ dependencies = [
   "syn 2.0.119",
  ]
  
@@ -275,7 +274,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "js-sys"
  version = "0.3.105"
-@@ -2504,6 +2627,27 @@ version = "0.4.34"
+@@ -2515,6 +2637,27 @@ version = "0.4.34"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
  
@@ -303,7 +302,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "markup5ever"
  version = "0.39.0"
-@@ -2621,7 +2765,7 @@ dependencies = [
+@@ -2632,7 +2775,7 @@ dependencies = [
   "png 0.18.1",
   "serde",
   "thiserror 2.0.21",
@@ -312,7 +311,7 @@ index aa2aa14..ee05904 100644
  ]
  
  [[package]]
-@@ -3111,7 +3255,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+@@ -3122,7 +3265,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "7d8fae84b431384b68627d0f9b3b1245fcf9f46f6c0e3dc902e9dce64edd1967"
  dependencies = [
   "libc",
@@ -321,7 +320,7 @@ index aa2aa14..ee05904 100644
  ]
  
  [[package]]
-@@ -3182,6 +3326,16 @@ dependencies = [
+@@ -3193,6 +3336,16 @@ dependencies = [
   "windows-link 0.2.1",
  ]
  
@@ -338,7 +337,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "percent-encoding"
  version = "2.3.2"
-@@ -3639,6 +3793,20 @@ dependencies = [
+@@ -3650,6 +3803,20 @@ dependencies = [
   "windows-sys 0.60.2",
  ]
  
@@ -359,7 +358,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "rsqlite-vfs"
  version = "0.1.1"
-@@ -3719,7 +3887,22 @@ dependencies = [
+@@ -3730,7 +3897,22 @@ dependencies = [
   "errno",
   "libc",
   "linux-raw-sys",
@@ -369,9 +368,9 @@ index aa2aa14..ee05904 100644
 +
 +[[package]]
 +name = "rustls"
-+version = "0.23.45"
++version = "0.23.46"
 +source = "registry+https://github.com/rust-lang/crates.io-index"
-+checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
++checksum = "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf"
 +dependencies = [
 + "log",
 + "once_cell",
@@ -383,7 +382,7 @@ index aa2aa14..ee05904 100644
  ]
  
  [[package]]
-@@ -3731,6 +3914,17 @@ dependencies = [
+@@ -3742,6 +3924,17 @@ dependencies = [
   "zeroize",
  ]
  
@@ -401,7 +400,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "rustversion"
  version = "1.0.23"
-@@ -3824,7 +4018,7 @@ version = "5.2.0"
+@@ -3835,7 +4028,7 @@ version = "5.2.0"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "5107b24b91445dd2aa449a258a1807b63240942157292354dc5bfdbeb8bc6db8"
  dependencies = [
@@ -410,7 +409,7 @@ index aa2aa14..ee05904 100644
   "cbc",
   "futures-util",
   "getrandom 0.4.3",
-@@ -4060,6 +4254,17 @@ dependencies = [
+@@ -4071,6 +4264,17 @@ dependencies = [
   "stable_deref_trait",
  ]
  
@@ -428,7 +427,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "sha1"
  version = "0.11.0"
-@@ -4093,6 +4298,29 @@ dependencies = [
+@@ -4104,6 +4308,29 @@ dependencies = [
   "digest 0.11.3",
  ]
  
@@ -452,26 +451,13 @@ index aa2aa14..ee05904 100644
 + "bzip2 0.4.4",
 + "tar",
 + "ureq",
-+ "zip 2.4.2",
++ "zip 2.6.1",
 +]
 +
  [[package]]
  name = "shlex"
  version = "2.0.1"
-@@ -4121,6 +4349,12 @@ version = "0.1.5"
- source = "registry+https://github.com/rust-lang/crates.io-index"
- checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
- 
-+[[package]]
-+name = "similar"
-+version = "2.7.0"
-+source = "registry+https://github.com/rust-lang/crates.io-index"
-+checksum = "bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa"
-+
- [[package]]
- name = "siphasher"
- version = "1.0.3"
-@@ -4146,7 +4380,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+@@ -4157,7 +4384,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4"
  dependencies = [
   "libc",
@@ -480,7 +466,7 @@ index aa2aa14..ee05904 100644
  ]
  
  [[package]]
-@@ -4251,6 +4485,12 @@ version = "0.11.1"
+@@ -4262,6 +4489,12 @@ version = "0.11.1"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
  
@@ -493,7 +479,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "swift-rs"
  version = "1.0.9"
-@@ -4895,7 +5135,7 @@ dependencies = [
+@@ -4906,7 +5139,7 @@ dependencies = [
   "getrandom 0.4.3",
   "once_cell",
   "rustix",
@@ -502,7 +488,7 @@ index aa2aa14..ee05904 100644
  ]
  
  [[package]]
-@@ -5243,7 +5483,7 @@ dependencies = [
+@@ -5254,7 +5487,7 @@ dependencies = [
   "png 0.18.1",
   "serde",
   "thiserror 2.0.21",
@@ -511,7 +497,7 @@ index aa2aa14..ee05904 100644
  ]
  
  [[package]]
-@@ -5289,7 +5529,7 @@ checksum = "f2f6fb2847f6742cd76af783a2a2c49e9375d0a111c7bef6f71cd9e738c72d6e"
+@@ -5300,7 +5533,7 @@ checksum = "f2f6fb2847f6742cd76af783a2a2c49e9375d0a111c7bef6f71cd9e738c72d6e"
  dependencies = [
   "memoffset",
   "tempfile",
@@ -520,7 +506,7 @@ index aa2aa14..ee05904 100644
  ]
  
  [[package]]
-@@ -5313,6 +5553,28 @@ version = "1.13.3"
+@@ -5324,6 +5557,28 @@ version = "1.13.3"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "c6f5d3c3b1bf09027a88a6bc961fc00497d651009560b5463668dc81b0fa87a8"
  
@@ -549,7 +535,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "url"
  version = "2.5.8"
-@@ -5659,6 +5921,24 @@ dependencies = [
+@@ -5670,6 +5925,24 @@ dependencies = [
   "system-deps",
  ]
  
@@ -574,7 +560,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "webview2-com"
  version = "0.39.1"
-@@ -5715,7 +5995,7 @@ version = "0.1.11"
+@@ -5726,7 +5999,7 @@ version = "0.1.11"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
  dependencies = [
@@ -583,7 +569,7 @@ index aa2aa14..ee05904 100644
  ]
  
  [[package]]
-@@ -5736,7 +6016,7 @@ dependencies = [
+@@ -5747,7 +6020,7 @@ dependencies = [
   "objc2-foundation",
   "objc2-quartz-core",
   "raw-window-handle",
@@ -592,7 +578,7 @@ index aa2aa14..ee05904 100644
   "windows-version",
  ]
  
-@@ -5952,6 +6232,15 @@ dependencies = [
+@@ -5963,6 +6236,15 @@ dependencies = [
   "windows-targets 0.42.2",
  ]
  
@@ -608,7 +594,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "windows-sys"
  version = "0.59.0"
-@@ -6342,6 +6631,15 @@ dependencies = [
+@@ -6353,6 +6635,15 @@ dependencies = [
   "rustix",
  ]
  
@@ -624,7 +610,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "yoke"
  version = "0.8.3"
-@@ -6472,6 +6770,20 @@ name = "zeroize"
+@@ -6483,6 +6774,20 @@ name = "zeroize"
  version = "1.9.0"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "e13c156562582aa81c60cb29407084cdb54c4164760106ab78e6c5b0858cf64e"
@@ -645,15 +631,15 @@ index aa2aa14..ee05904 100644
  
  [[package]]
  name = "zerotrie"
-@@ -6506,6 +6818,36 @@ dependencies = [
+@@ -6517,6 +6822,34 @@ dependencies = [
   "syn 3.0.6",
  ]
  
 +[[package]]
 +name = "zip"
-+version = "2.4.2"
++version = "2.6.1"
 +source = "registry+https://github.com/rust-lang/crates.io-index"
-+checksum = "fabe6324e908f85a1c52063ce7aa26b68dcb7eb6dbc83a2d148403c9bc3eba50"
++checksum = "1dcb24d0152526ae49b9b96c1dcf71850ca1e0b882e4e28ed898a93c41334744"
 +dependencies = [
 + "aes 0.8.4",
 + "arbitrary",
@@ -662,7 +648,6 @@ index aa2aa14..ee05904 100644
 + "crc32fast",
 + "crossbeam-utils",
 + "deflate64",
-+ "displaydoc",
 + "flate2",
 + "getrandom 0.3.4",
 + "hmac 0.12.1",
@@ -671,7 +656,6 @@ index aa2aa14..ee05904 100644
 + "memchr",
 + "pbkdf2",
 + "sha1 0.10.7",
-+ "thiserror 2.0.21",
 + "time",
 + "xz2",
 + "zeroize",
@@ -682,7 +666,7 @@ index aa2aa14..ee05904 100644
  [[package]]
  name = "zip"
  version = "4.6.1"
-@@ -6556,6 +6898,34 @@ dependencies = [
+@@ -6567,6 +6900,34 @@ dependencies = [
   "simd-adler32",
  ]
  
@@ -706,9 +690,9 @@ index aa2aa14..ee05904 100644
 +
 +[[package]]
 +name = "zstd-sys"
-+version = "2.1.1+zstd.1.5.7"
++version = "2.1.2+zstd.1.5.7"
 +source = "registry+https://github.com/rust-lang/crates.io-index"
-+checksum = "aeec9eaf2dffbbd09201e23bd0ffcbaa33bb8e9266a10734fd7ed90a85eca078"
++checksum = "481ada9c543b2323cbb7bbdbb5249177fbf0188ed959ed2c15e4b22421c84ed3"
 +dependencies = [
 + "cc",
 + "pkg-config",
@@ -718,746 +702,198 @@ index aa2aa14..ee05904 100644
  name = "zune-core"
  version = "0.5.3"
 diff --git a/src-tauri/Cargo.toml b/src-tauri/Cargo.toml
-index 07d91b8..9d6b09c 100644
+index ed84bde..f164549 100644
 --- a/src-tauri/Cargo.toml
 +++ b/src-tauri/Cargo.toml
-@@ -51,6 +51,9 @@ objc2 = "0.6"
+@@ -51,6 +51,8 @@ objc2 = "0.6"
  apple-native-keyring-store = { version = "1", features = ["keychain"] }
  
  [target.'cfg(target_os = "linux")'.dependencies]
-+# Sasayaki transcription (feature "transcription"): offline speech recognition + Myers diff for alignment
++# Sasayaki transcription (feature "transcription"): offline speech recognition
 +sherpa-onnx = { version = "1.13.8", optional = true }
-+similar = { version = "2", optional = true }
  zbus-secret-service-keyring-store = { version = "1", features = ["rt-async-io-crypto-rust"] }
  arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"] }
  symphonia = { version = "0.5", default-features = false, features = ["aac", "alac", "flac", "isomp4", "mkv", "mp3", "ogg", "pcm", "vorbis", "wav"] }
-@@ -76,6 +79,11 @@ windows = { version = "0.61", features = [
- ] }
+@@ -77,6 +79,11 @@ windows = { version = "0.61", features = [
  windows-native-keyring-store = "1"
+ libloading = "0.8"
  
 +[features]
 +default = ["transcription"]
 +# Linux: on-device Sasayaki transcription (sherpa-onnx + ReazonSpeech). No effect on macOS/Windows.
-+transcription = ["dep:sherpa-onnx", "dep:similar"]
++transcription = ["dep:sherpa-onnx"]
 +
  [profile.dev.package."*"]
  opt-level = 2
  
 diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
-index a5496eb..08b567f 100644
+index a9972f6..897e757 100644
 --- a/src-tauri/src/lib.rs
 +++ b/src-tauri/src/lib.rs
-@@ -22,8 +22,10 @@ mod sasayaki;
- mod search;
+@@ -24,6 +24,8 @@ mod search;
  mod statistics;
  mod sync;
--#[cfg(target_os = "macos")]
-+#[cfg(any(target_os = "macos", all(target_os = "linux", feature = "transcription")))]
  mod transcriber;
 +#[cfg(all(target_os = "linux", feature = "transcription"))]
 +mod transcription;
  mod ttu_statistics;
  mod updater;
  mod wheel;
-@@ -140,17 +142,17 @@ pub fn run() {
-             sasayaki::sasayaki_load_playback,
-             sasayaki::sasayaki_save_playback,
-             sasayaki::sasayaki_audio_chapters,
--            #[cfg(target_os = "macos")]
-+            #[cfg(any(target_os = "macos", all(target_os = "linux", feature = "transcription")))]
-             transcriber::sasayaki_transcriber_status,
--            #[cfg(not(target_os = "macos"))]
-+            #[cfg(not(any(target_os = "macos", all(target_os = "linux", feature = "transcription"))))]
-             sasayaki::sasayaki_transcriber_status,
--            #[cfg(target_os = "macos")]
-+            #[cfg(any(target_os = "macos", all(target_os = "linux", feature = "transcription")))]
-             transcriber::sasayaki_load_transcript,
--            #[cfg(target_os = "macos")]
-+            #[cfg(any(target_os = "macos", all(target_os = "linux", feature = "transcription")))]
-             transcriber::sasayaki_clear_transcript,
--            #[cfg(target_os = "macos")]
-+            #[cfg(any(target_os = "macos", all(target_os = "linux", feature = "transcription")))]
-             transcriber::sasayaki_pause_transcription,
--            #[cfg(target_os = "macos")]
-+            #[cfg(any(target_os = "macos", all(target_os = "linux", feature = "transcription")))]
-             transcriber::sasayaki_transcribe,
-             #[cfg(windows)]
-             media_controls::media_controls_metadata,
 diff --git a/src-tauri/src/sasayaki.rs b/src-tauri/src/sasayaki.rs
-index 47a62be..a5dd77b 100644
+index cb578dd..f20a92a 100644
 --- a/src-tauri/src/sasayaki.rs
 +++ b/src-tauri/src/sasayaki.rs
-@@ -137,13 +137,13 @@ fn find_unique(source: &[char], text: &[char], start: usize) -> Option<usize> {
- #[derive(Serialize)]
- #[serde(rename_all = "camelCase")]
- pub struct Chapter {
--    chapter_index: usize,
--    start: usize,
--    length: usize,
-+    pub(crate) chapter_index: usize,
-+    pub(crate) start: usize,
-+    pub(crate) length: usize,
+@@ -38,7 +38,7 @@ pub struct SasayakiMatch {
+     pub length: usize,
  }
  
- impl Chapter {
--    fn end(&self) -> usize {
-+    pub(crate) fn end(&self) -> usize {
-         self.start + self.length
-     }
- }
-@@ -151,11 +151,11 @@ impl Chapter {
- #[derive(Serialize)]
- #[serde(rename_all = "camelCase")]
- pub struct Source {
--    text: Vec<char>,
--    sentence_ends: Vec<bool>,
--    segment_ends: Vec<bool>,
--    chapters: Vec<Chapter>,
--    images: Vec<SasayakiImage>,
-+    pub(crate) text: Vec<char>,
-+    pub(crate) sentence_ends: Vec<bool>,
-+    pub(crate) segment_ends: Vec<bool>,
-+    pub(crate) chapters: Vec<Chapter>,
-+    pub(crate) images: Vec<SasayakiImage>,
- }
- 
- static RE_CHARACTER: LazyLock<Regex> =
-@@ -435,7 +435,7 @@ pub fn sasayaki_save_playback(app: AppHandle, id: String, mut playback: Sasayaki
-     }
- }
- 
--#[cfg(not(target_os = "macos"))]
-+#[cfg(not(any(target_os = "macos", all(target_os = "linux", feature = "transcription"))))]
- #[tauri::command]
- pub fn sasayaki_transcriber_status() -> &'static str {
-     "unsupported"
+-#[derive(Serialize, Deserialize)]
++#[derive(Serialize, Deserialize, Clone)]
+ pub struct SasayakiToken {
+     pub text: String,
+     pub start: f64,
 diff --git a/src-tauri/src/transcriber.rs b/src-tauri/src/transcriber.rs
-index b922414..9644b1e 100644
+index 2d537f5..0f6eb86 100644
 --- a/src-tauri/src/transcriber.rs
 +++ b/src-tauri/src/transcriber.rs
-@@ -1,43 +1,21 @@
--use std::ffi::{CStr, CString, c_char, c_void};
- use std::sync::Mutex;
- use std::time::{Duration, Instant};
- 
- use serde::{Deserialize, Serialize};
- use tauri::AppHandle;
- use tauri::ipc::Channel;
--use tokio::sync::{mpsc, oneshot};
-+use tokio::sync::mpsc;
- 
- use crate::library;
- use crate::sasayaki::{self, SasayakiMatchData, Source};
+@@ -16,6 +16,9 @@ mod backend;
+ #[cfg(windows)]
+ #[path = "transcriber/nakuru.rs"]
+ mod backend;
++#[cfg(target_os = "linux")]
++#[path = "transcriber/linux.rs"]
++mod backend;
  
  const TRANSCRIPT_FILE: &str = "sasayaki_transcript.json";
  
--unsafe extern "C" {
--    fn hoshi_transcriber_status(context: *mut c_void, callback: extern "C" fn(*mut c_void, i32));
--    fn hoshi_audio_duration(path: *const c_char) -> f64;
--    fn hoshi_transcribe(
--        path: *const c_char,
--        from: f64,
--        context: *mut c_void,
--        on_download: extern "C" fn(*mut c_void, f64),
--        on_tokens: extern "C" fn(*mut c_void, *const c_char, f64),
--        on_finish: extern "C" fn(*mut c_void, *const c_char),
--    ) -> *mut c_void;
--    fn hoshi_transcribe_cancel(handle: *mut c_void);
--    fn hoshi_transcribe_release(handle: *mut c_void);
--    fn hoshi_align(
--        source: *const c_char,
--        tokens: *const c_char,
--        context: *mut c_void,
--        callback: extern "C" fn(*mut c_void, *const c_char),
--    );
--}
--
--#[derive(Serialize, Deserialize)]
--struct SasayakiToken {
--    text: String,
--    start: f64,
--    end: f64,
-+#[derive(Serialize, Deserialize, Clone)]
-+pub struct SasayakiToken {
-+    pub text: String,
-+    pub start: f64,
-+    pub end: f64,
- }
- 
- #[derive(Serialize, Deserialize)]
-@@ -73,77 +51,180 @@ pub enum Progress {
-     Aligning,
- }
- 
--enum Event {
-+pub(crate) enum Event {
-     Download(f64),
-     Tokens(Vec<SasayakiToken>, f64),
-     Finish(Option<String>),
- }
- 
--type Events = mpsc::UnboundedSender<Event>;
-+pub(crate) type Events = mpsc::UnboundedSender<Event>;
+@@ -135,6 +138,9 @@ pub async fn sasayaki_transcribe(
+         duration,
+         remaining: None,
+     });
++    // Linux: the saved tail lets the resumed transcription drop words it hears again.
++    #[cfg(target_os = "linux")]
++    let audio = audio.resuming_after(&transcript.tokens, transcript.through);
+     if !transcript.is_complete() {
+         let (sender, mut events) = mpsc::unbounded_channel();
+         backend::start(&app, audio, transcript.through, performance, sender, cancel)?;
+diff --git a/src-tauri/src/transcriber/linux.rs b/src-tauri/src/transcriber/linux.rs
+new file mode 100644
+index 0000000..e07a971
+--- /dev/null
++++ b/src-tauri/src/transcriber/linux.rs
+@@ -0,0 +1,113 @@
++//! Linux transcription backend: sherpa-onnx with the ReazonSpeech model (see
++//! `crate::transcription`). The model (~160 MB) is downloaded on first use into the app's
++//! cache directory and checked with SHA-256; after that everything runs offline.
++//!
++//! Built without the `transcription` feature, transcription reports "unsupported".
 +
-+#[cfg(target_os = "macos")]
-+mod backend {
-+    use super::*;
-+    
-+    unsafe extern "C" {
-+        fn hoshi_transcriber_status(context: *mut c_void, callback: extern "C" fn(*mut c_void, i32));
-+        fn hoshi_audio_duration(path: *const c_char) -> f64;
-+        fn hoshi_transcribe(
-+            path: *const c_char,
-+            from: f64,
-+            context: *mut c_void,
-+            on_download: extern "C" fn(*mut c_void, f64),
-+            on_tokens: extern "C" fn(*mut c_void, *const c_char, f64),
-+            on_finish: extern "C" fn(*mut c_void, *const c_char),
-+        ) -> *mut c_void;
-+        fn hoshi_transcribe_cancel(handle: *mut c_void);
-+        fn hoshi_transcribe_release(handle: *mut c_void);
-+        fn hoshi_align(
-+            source: *const c_char,
-+            tokens: *const c_char,
-+            context: *mut c_void,
-+            callback: extern "C" fn(*mut c_void, *const c_char),
-+        );
-+    }
- 
--struct Transcription(*mut c_void);
-+    pub struct Handle(*mut c_void);
- 
--unsafe impl Send for Transcription {}
-+    unsafe impl Send for Handle {}
- 
--impl Drop for Transcription {
--    fn drop(&mut self) {
--        unsafe { hoshi_transcribe_release(self.0) }
-+    impl Drop for Handle {
-+        fn drop(&mut self) {
-+            unsafe { hoshi_transcribe_release(self.0) }
-+        }
-     }
--}
- 
--static RUNNING: Mutex<Option<Transcription>> = Mutex::new(None);
-+    impl Handle {
-+        pub fn cancel(&self) {
-+            unsafe { hoshi_transcribe_cancel(self.0) }
-+        }
-+    }
- 
--extern "C" fn on_status(context: *mut c_void, status: i32) {
--    let sender = unsafe { Box::from_raw(context.cast::<oneshot::Sender<i32>>()) };
--    sender.send(status).ok();
--}
-+    extern "C" fn on_status(context: *mut c_void, status: i32) {
-+        let sender = unsafe { Box::from_raw(context.cast::<oneshot::Sender<i32>>()) };
-+        sender.send(status).ok();
-+    }
- 
--extern "C" fn on_download(context: *mut c_void, fraction: f64) {
--    let events = unsafe { &*context.cast::<Events>() };
--    events.send(Event::Download(fraction)).ok();
--}
-+    extern "C" fn on_download(context: *mut c_void, fraction: f64) {
-+        let events = unsafe { &*context.cast::<Events>() };
-+        events.send(Event::Download(fraction)).ok();
-+    }
- 
--extern "C" fn on_tokens(context: *mut c_void, json: *const c_char, through: f64) {
--    let events = unsafe { &*context.cast::<Events>() };
--    let tokens = serde_json::from_slice(unsafe { CStr::from_ptr(json) }.to_bytes()).unwrap();
--    events.send(Event::Tokens(tokens, through)).ok();
--}
-+    extern "C" fn on_tokens(context: *mut c_void, json: *const c_char, through: f64) {
-+        let events = unsafe { &*context.cast::<Events>() };
-+        let tokens = serde_json::from_slice(unsafe { CStr::from_ptr(json) }.to_bytes()).unwrap();
-+        events.send(Event::Tokens(tokens, through)).ok();
-+    }
- 
--extern "C" fn on_finish(context: *mut c_void, error: *const c_char) {
--    let events = unsafe { Box::from_raw(context.cast::<Events>()) };
--    let error = (!error.is_null()).then(|| {
--        unsafe { CStr::from_ptr(error) }
--            .to_string_lossy()
--            .into_owned()
--    });
--    events.send(Event::Finish(error)).ok();
--}
-+    extern "C" fn on_finish(context: *mut c_void, error: *const c_char) {
-+        let events = unsafe { Box::from_raw(context.cast::<Events>()) };
-+        let error = (!error.is_null()).then(|| {
-+            unsafe { CStr::from_ptr(error) }
-+                .to_string_lossy()
-+                .into_owned()
-+        });
-+        events.send(Event::Finish(error)).ok();
-+    }
- 
--extern "C" fn on_aligned(context: *mut c_void, json: *const c_char) {
--    let result = unsafe { &mut *context.cast::<Option<SasayakiMatchData>>() };
--    *result = Some(serde_json::from_slice(unsafe { CStr::from_ptr(json) }.to_bytes()).unwrap());
-+    extern "C" fn on_aligned(context: *mut c_void, json: *const c_char) {
-+        let result = unsafe { &mut *context.cast::<Option<SasayakiMatchData>>() };
-+        *result = Some(serde_json::from_slice(unsafe { CStr::from_ptr(json) }.to_bytes()).unwrap());
-+    }
++use tauri::AppHandle;
++use tokio_util::sync::CancellationToken;
 +
-+    pub async fn status() -> i32 {
-+        let (sender, receiver) = oneshot::channel();
-+        unsafe { hoshi_transcriber_status(Box::into_raw(Box::new(sender)).cast(), on_status) };
-+        receiver.await.unwrap()
-+    }
++use super::Events;
++use crate::sasayaki::SasayakiToken;
 +
-+    pub fn duration(path: &str) -> f64 {
-+        let audio = CString::new(path).unwrap();
-+        unsafe { hoshi_audio_duration(audio.as_ptr()) }
-+    }
++pub struct Audio {
++    #[cfg_attr(not(feature = "transcription"), allow(dead_code))]
++    path: std::path::PathBuf,
++    pub duration: f64,
++    /// Already saved tokens near the resume point, to drop repeated words.
++    #[cfg_attr(not(feature = "transcription"), allow(dead_code))]
++    previous: Vec<SasayakiToken>,
++}
 +
-+    pub fn start(_app: &AppHandle, path: &str, from: f64, _previous: &[SasayakiToken], events: Events) -> Handle {
-+        let audio = CString::new(path).unwrap();
-+        let context = Box::into_raw(Box::new(events)).cast();
-+        Handle(unsafe { hoshi_transcribe(audio.as_ptr(), from, context, on_download, on_tokens, on_finish) })
++impl Audio {
++    pub fn resuming_after(mut self, tokens: &[SasayakiToken], through: f64) -> Self {
++        let tail = tokens.partition_point(|token| token.end < through - 1.0);
++        self.previous = tokens[tail..].to_vec();
++        self
 +    }
++}
 +
-+    pub fn align(source: &Source, tokens: &[SasayakiToken]) -> SasayakiMatchData {
-+        let source = CString::new(serde_json::to_vec(source).unwrap()).unwrap();
-+        let tokens = CString::new(serde_json::to_vec(tokens).unwrap()).unwrap();
-+        let mut result = None;
-+        unsafe {
-+            hoshi_align(
-+                source.as_ptr(),
-+                tokens.as_ptr(),
-+                (&raw mut result).cast(),
-+                on_aligned,
-+            )
-+        };
-+        result.unwrap()
-+    }
- }
- 
--fn align(source: &Source, tokens: &[SasayakiToken]) -> SasayakiMatchData {
--    let source = CString::new(serde_json::to_vec(source).unwrap()).unwrap();
--    let tokens = CString::new(serde_json::to_vec(tokens).unwrap()).unwrap();
--    let mut result = None;
--    unsafe {
--        hoshi_align(
--            source.as_ptr(),
--            tokens.as_ptr(),
--            (&raw mut result).cast(),
--            on_aligned,
--        )
--    };
--    result.unwrap()
-+#[cfg(target_os = "linux")]
-+mod backend {
-+    use super::*;
++#[cfg(feature = "transcription")]
++pub fn prepare(path: &str) -> Result<Audio, String> {
++    let path = std::path::PathBuf::from(path);
++    let duration = crate::transcription::audio::duration(&path)
++        .ok_or_else(|| format!("Could not read {}", path.display()))?;
++    Ok(Audio {
++        path,
++        duration,
++        previous: Vec::new(),
++    })
++}
++
++#[cfg(feature = "transcription")]
++pub fn start(
++    app: &AppHandle,
++    audio: Audio,
++    from: f64,
++    _performance: i32,
++    events: Events,
++    cancel: CancellationToken,
++) -> Result<(), String> {
 +    use std::sync::Arc;
 +    use std::sync::atomic::{AtomicBool, Ordering};
 +    use tauri::Manager;
 +
-+    pub struct Handle(Arc<AtomicBool>);
++    use super::Event;
 +
-+    impl Handle {
-+        pub fn cancel(&self) {
-+            self.0.store(true, Ordering::Relaxed);
-+        }
-+    }
-+
-+    pub async fn status() -> i32 {
-+        0
-+    }
-+
-+    pub fn duration(path: &str) -> f64 {
-+        crate::transcription::audio::duration(std::path::Path::new(path)).unwrap_or(-1.0)
-+    }
-+
-+    pub fn start(app: &AppHandle, path: &str, from: f64, previous: &[SasayakiToken], events: Events) -> Handle {
-+        let cancel = Arc::new(AtomicBool::new(false));
-+        let model_dir = app
-+            .path()
-+            .app_cache_dir()
-+            .unwrap_or_else(|_| std::env::temp_dir())
-+            .join("Models")
-+            .join("reazonspeech-k2-v2-int8");
-+        let (path, previous, flag) = (path.to_string(), previous.to_vec(), cancel.clone());
-+        std::thread::spawn(move || {
-+            let result = crate::transcription::transcribe(
-+                &model_dir,
-+                std::path::Path::new(&path),
-+                from,
-+                &previous,
-+                &flag,
-+                &mut |fraction| {
-+                    events.send(Event::Download(fraction)).ok();
-+                },
-+                &mut |tokens, through| {
-+                    events.send(Event::Tokens(tokens, through)).ok();
-+                },
-+            );
-+            events.send(Event::Finish(result.err())).ok();
-+        });
-+        Handle(cancel)
-+    }
-+
-+    pub fn align(source: &Source, tokens: &[SasayakiToken]) -> SasayakiMatchData {
-+        crate::transcription::aligner::align(source, tokens)
-+    }
- }
- 
-+static RUNNING: Mutex<Option<backend::Handle>> = Mutex::new(None);
-+
- #[tauri::command]
- pub async fn sasayaki_transcriber_status() -> &'static str {
--    let (sender, receiver) = oneshot::channel();
--    unsafe { hoshi_transcriber_status(Box::into_raw(Box::new(sender)).cast(), on_status) };
--    match receiver.await.unwrap() {
-+    match backend::status().await {
-         0 => "available",
-         1 => "requiresMacos26",
-         2 => "unavailable",
-@@ -165,7 +246,7 @@ pub fn sasayaki_clear_transcript(app: AppHandle, id: String) -> Result<(), Strin
- #[tauri::command]
- pub fn sasayaki_pause_transcription() {
-     if let Some(transcription) = RUNNING.lock().unwrap().as_ref() {
--        unsafe { hoshi_transcribe_cancel(transcription.0) }
-+        transcription.cancel();
-     }
- }
- 
-@@ -177,14 +258,13 @@ pub async fn sasayaki_transcribe(
-     on_progress: Channel<Progress>,
- ) -> Result<(), String> {
-     let root = library::book_dir(&app, &id).ok_or_else(|| format!("Book {id} was not found"))?;
--    let audio = CString::new(path.as_str()).unwrap();
--    let duration = unsafe { hoshi_audio_duration(audio.as_ptr()) };
-+    let duration = backend::duration(&path);
-     if duration < 0.0 {
-         return Err(format!("Could not read {path}"));
-     }
- 
-     let mut playback = sasayaki::load_sasayaki_playback(&root).unwrap_or_default();
--    playback.audio_path = Some(path);
-+    playback.audio_path = Some(path.clone());
-     sasayaki::save_sasayaki_playback(&playback, &root).ok();
- 
-     let transcript_path = root.join(TRANSCRIPT_FILE);
-@@ -204,18 +284,9 @@ pub async fn sasayaki_transcribe(
-     });
-     if !transcript.is_complete() {
-         let (sender, mut events) = mpsc::unbounded_channel();
--        let context = Box::into_raw(Box::new(sender)).cast();
--        let handle = unsafe {
--            hoshi_transcribe(
--                audio.as_ptr(),
--                transcript.through,
--                context,
--                on_download,
--                on_tokens,
--                on_finish,
--            )
--        };
--        *RUNNING.lock().unwrap() = Some(Transcription(handle));
-+        let tail_start = transcript.tokens.partition_point(|t| t.end < transcript.through - 1.0);
-+        let handle = backend::start(&app, &path, transcript.through, &transcript.tokens[tail_start..], sender);
-+        *RUNNING.lock().unwrap() = Some(handle);
- 
-         let start = transcript.through;
-         let mut first_result = None;
-@@ -263,7 +334,7 @@ pub async fn sasayaki_transcribe(
-     progress(Progress::Aligning);
-     let book = app.clone();
-     let result = tauri::async_runtime::spawn_blocking(move || {
--        sasayaki::build_source(&book, &id).map(|source| align(&source, &transcript.tokens))
-+        sasayaki::build_source(&book, &id).map(|source| backend::align(&source, &transcript.tokens))
-     })
-     .await
-     .unwrap()?;
-diff --git a/src-tauri/src/transcription/aligner.rs b/src-tauri/src/transcription/aligner.rs
-new file mode 100644
-index 0000000..3c698d1
---- /dev/null
-+++ b/src-tauri/src/transcription/aligner.rs
-@@ -0,0 +1,280 @@
-+// Port of swift/SasayakiAligner.swift (macOS) so Linux aligns transcripts the same way.
-+// Copyright © 2026 Manhhao. SPDX-License-Identifier: GPL-3.0-or-later
-+
-+use std::sync::LazyLock;
-+
-+use regex::Regex;
-+use similar::{Algorithm, DiffOp, capture_diff_slices};
-+use unicode_normalization::UnicodeNormalization;
-+
-+use super::Token;
-+use crate::library;
-+use crate::sasayaki::{Chapter, SasayakiMatch, SasayakiMatchData, Source};
-+
-+#[derive(Clone, Copy)]
-+struct Timing {
-+    start: f64,
-+    end: f64,
++    let model_dir = app
++        .path()
++        .app_cache_dir()
++        .unwrap_or_else(|_| std::env::temp_dir())
++        .join("Models")
++        .join("reazonspeech-k2-v2-int8");
++    let stop = Arc::new(AtomicBool::new(false));
++    let flag = stop.clone();
++    tauri::async_runtime::spawn(async move {
++        cancel.cancelled().await;
++        flag.store(true, Ordering::Relaxed);
++    });
++    std::thread::spawn(move || {
++        let result = crate::transcription::transcribe(
++            &model_dir,
++            &audio.path,
++            from,
++            &audio.previous,
++            &stop,
++            &mut |fraction| {
++                events.send(Event::Download(fraction)).ok();
++            },
++            &mut |tokens, through| {
++                events.send(Event::Tokens(tokens, through)).ok();
++            },
++        );
++        events.send(Event::Finish(result.err())).ok();
++    });
++    Ok(())
 +}
 +
-+struct Speech {
-+    characters: Vec<char>,
-+    timings: Vec<Timing>,
++#[cfg(feature = "transcription")]
++pub async fn status(_app: AppHandle) -> &'static str {
++    "available"
 +}
 +
-+static RE_CHARACTER: LazyLock<Regex> =
-+    LazyLock::new(|| Regex::new(&format!("[{}]", library::CHARACTER_CLASS)).unwrap());
-+
-+impl Speech {
-+    fn new(tokens: &[Token]) -> Self {
-+        let mut characters = Vec::new();
-+        let mut timings = Vec::new();
-+        for token in tokens {
-+            for found in RE_CHARACTER.find_iter(&token.text) {
-+                if let Some(character) = found.as_str().chars().next() {
-+                    characters.push(normalize(character));
-+                    timings.push(Timing { start: token.start, end: token.end });
-+                }
-+            }
-+        }
-+        Speech { characters, timings }
-+    }
++#[cfg(not(feature = "transcription"))]
++pub fn prepare(_path: &str) -> Result<Audio, String> {
++    Err("This build has no transcription support".into())
 +}
 +
-+#[derive(Clone, Copy)]
-+struct Anchor {
-+    speech: usize,
-+    book: usize,
++#[cfg(not(feature = "transcription"))]
++pub fn start(
++    _app: &AppHandle,
++    _audio: Audio,
++    _from: f64,
++    _performance: i32,
++    _events: Events,
++    _cancel: CancellationToken,
++) -> Result<(), String> {
++    Err("This build has no transcription support".into())
 +}
 +
-+struct Span {
-+    from: f64,
-+    to: f64,
-+    lower: usize,
-+    upper: usize,
-+}
-+
-+const PROBE_LENGTH: usize = 12;
-+const PROBE_STRIDE: usize = 100;
-+const MAX_BLOCK: usize = 2000;
-+const MAX_SECONDS_PER_CHARACTER: f64 = 0.7;
-+const DURATION_OVERHEAD: f64 = 1.0;
-+const MAX_EDGE: usize = 12;
-+const MAX_INTERPOLATED: usize = 8;
-+const MAX_INTERPOLATED_GAP: f64 = 2.5;
-+const END_PADDING: f64 = 0.3;
-+const LEADING_GAP: f64 = 0.5;
-+const CHARACTER_SPAN: f64 = 0.15;
-+const START_LEAD: f64 = 0.2;
-+
-+pub fn align(source: &Source, tokens: &[Token]) -> SasayakiMatchData {
-+    let book: Vec<char> = source.text.iter().copied().map(normalize).collect();
-+    let speech = Speech::new(tokens);
-+    let mut times: Vec<Option<Timing>> = vec![None; book.len()];
-+    let anchors = anchors(&speech, &book, &source.chapters);
-+    for pair in anchors.windows(2) {
-+        let (anchor, next) = (pair[0], pair[1]);
-+        if next.speech <= anchor.speech || next.book <= anchor.book {
-+            continue;
-+        }
-+        let bounded = Anchor {
-+            speech: next.speech.min(anchor.speech + MAX_BLOCK),
-+            book: next.book.min(anchor.book + MAX_BLOCK),
-+        };
-+        assign(&speech, &book, anchor, bounded, &mut times);
-+    }
-+    cut(source, &times)
-+}
-+
-+fn normalize(character: char) -> char {
-+    let mapped: String = character.to_string().nfkc().collect::<String>().to_lowercase();
-+    let scalar = mapped.chars().next().unwrap_or(character);
-+    if ('\u{30A1}'..='\u{30F6}').contains(&scalar) {
-+        return char::from_u32(scalar as u32 - 0x60).unwrap_or(scalar);
-+    }
-+    scalar
-+}
-+
-+fn find_text(source: &[char], text: &[char], start: usize, end: usize) -> Option<usize> {
-+    let mut index = start;
-+    while index + text.len() <= end {
-+        if source[index..index + text.len()] == *text {
-+            return Some(index);
-+        }
-+        index += 1;
-+    }
-+    None
-+}
-+
-+fn anchors(speech: &Speech, book: &[char], chapters: &[Chapter]) -> Vec<Anchor> {
-+    let mut anchors = vec![Anchor { speech: 0, book: 0 }];
-+    if let Some(chapter) = chapters.iter().find(|chapter| chapter.length >= PROBE_LENGTH) {
-+        let probe = &book[chapter.start..chapter.start + PROBE_LENGTH];
-+        if let Some(found) = find_text(&speech.characters, probe, 0, speech.characters.len()) {
-+            anchors[0] = Anchor { speech: found, book: chapter.start };
-+        }
-+    }
-+
-+    let mut cursor = 0;
-+    if speech.characters.len() >= PROBE_LENGTH {
-+        let mut index = 0;
-+        while index <= speech.characters.len() - PROBE_LENGTH {
-+            let probe = &speech.characters[index..index + PROBE_LENGTH];
-+            let limit = book.len().min(cursor + MAX_BLOCK + PROBE_LENGTH);
-+            if let Some(found) = find_text(book, probe, cursor, limit) {
-+                cursor = found + PROBE_LENGTH;
-+                let previous = *anchors.last().unwrap();
-+                if index > previous.speech && found > previous.book {
-+                    anchors.push(Anchor { speech: index, book: found });
-+                }
-+            }
-+            index += PROBE_STRIDE;
-+        }
-+    }
-+    anchors.push(Anchor { speech: speech.characters.len(), book: book.len() });
-+    anchors
-+}
-+
-+fn assign(speech: &Speech, book: &[char], anchor: Anchor, next: Anchor, times: &mut [Option<Timing>]) {
-+    let spoken = &speech.characters[anchor.speech..next.speech];
-+    let written = &book[anchor.book..next.book];
-+    // Same shape as Swift's `written.difference(from: spoken)`: removals index the
-+    // spoken text, insertions index the written text (both Myers diffs).
-+    let mut removed = vec![false; spoken.len()];
-+    let mut inserted = vec![false; written.len()];
-+    for op in capture_diff_slices(Algorithm::Myers, spoken, written) {
-+        match op {
-+            DiffOp::Equal { .. } => {}
-+            DiffOp::Delete { old_index, old_len, .. } => {
-+                removed[old_index..old_index + old_len].fill(true);
-+            }
-+            DiffOp::Insert { new_index, new_len, .. } => {
-+                inserted[new_index..new_index + new_len].fill(true);
-+            }
-+            DiffOp::Replace { old_index, old_len, new_index, new_len } => {
-+                removed[old_index..old_index + old_len].fill(true);
-+                inserted[new_index..new_index + new_len].fill(true);
-+            }
-+        }
-+    }
-+
-+    let mut offset = 0;
-+    for index in 0..removed.len() {
-+        if !removed[index] {
-+            while offset < inserted.len() && inserted[offset] {
-+                offset += 1;
-+            }
-+        }
-+        let target = anchor.book + offset.min(written.len() - 1);
-+        if times[target].is_none() {
-+            times[target] = Some(speech.timings[anchor.speech + index]);
-+        }
-+        let substitution = offset < inserted.len() && inserted[offset];
-+        if !removed[index] || substitution {
-+            offset += 1;
-+        }
-+    }
-+}
-+
-+fn cut(source: &Source, times: &[Option<Timing>]) -> SasayakiMatchData {
-+    let mut matches: Vec<SasayakiMatch> = Vec::new();
-+    let mut unmatched = 0;
-+    for chapter in &source.chapters {
-+        let mut start = chapter.start;
-+        for index in chapter.start..chapter.end() {
-+            if !is_boundary(source, chapter, start, index) {
-+                continue;
-+            }
-+            match time(start, index, chapter, times, matches.last()) {
-+                Some(span) => matches.push(SasayakiMatch {
-+                    id: format!("{}-{}", chapter.chapter_index, span.lower - chapter.start),
-+                    start_time: span.from,
-+                    end_time: span.to,
-+                    text: source.text[span.lower..=span.upper].iter().collect(),
-+                    chapter_index: chapter.chapter_index,
-+                    start: span.lower - chapter.start,
-+                    length: span.upper - span.lower + 1,
-+                }),
-+                None => unmatched += 1,
-+            }
-+            start = index + 1;
-+        }
-+    }
-+
-+    matches.sort_by(|a, b| a.start_time.total_cmp(&b.start_time));
-+    for index in 0..matches.len() {
-+        let limit = matches.get(index + 1).map_or(f64::INFINITY, |next| next.start_time);
-+        let end = matches[index].end_time;
-+        matches[index].end_time = end.max((end + END_PADDING).min(limit));
-+    }
-+    SasayakiMatchData { matches, unmatched, images: source.images.clone() }
-+}
-+
-+fn is_boundary(source: &Source, chapter: &Chapter, start: usize, index: usize) -> bool {
-+    if source.sentence_ends[index] || index == chapter.end() - 1 {
-+        return true;
-+    }
-+    source.segment_ends[index]
-+        && index > start
-+        && index + 2 < chapter.end()
-+        && !source.sentence_ends[index + 1]
-+}
-+
-+fn time(
-+    start: usize,
-+    index: usize,
-+    chapter: &Chapter,
-+    times: &[Option<Timing>],
-+    previous: Option<&SasayakiMatch>,
-+) -> Option<Span> {
-+    let timed: Vec<usize> = (start..=index).filter(|&i| times[i].is_some()).collect();
-+    let (Some(&first), Some(&last)) = (timed.first(), timed.last()) else {
-+        return interpolate(start, index, chapter, times, previous);
-+    };
-+    let first_timing = times[first].unwrap();
-+    let to = times[last].unwrap().end;
-+    let lower = if first - start <= MAX_EDGE { start } else { first };
-+    let upper = if index - last <= MAX_EDGE { index } else { last };
-+    let mut from = first_timing.start;
-+    if timed.len() >= 2 && times[timed[1]].unwrap().start - first_timing.end > LEADING_GAP {
-+        from = times[timed[1]].unwrap().start;
-+    } else {
-+        from = from.max(first_timing.end - CHARACTER_SPAN);
-+    }
-+    from -= START_LEAD;
-+
-+    if !within_budget(from, to, upper - lower + 1) {
-+        return interpolate(start, index, chapter, times, previous);
-+    }
-+    Some(Span { from, to, lower, upper })
-+}
-+
-+fn interpolate(
-+    start: usize,
-+    index: usize,
-+    chapter: &Chapter,
-+    times: &[Option<Timing>],
-+    previous: Option<&SasayakiMatch>,
-+) -> Option<Span> {
-+    let length = index - start + 1;
-+    if length > MAX_INTERPOLATED || start <= chapter.start || index + 1 >= chapter.end() {
-+        return None;
-+    }
-+    let previous_end = times[start - 1]?.end;
-+    let next_start = times[index + 1]?.start;
-+    if next_start <= previous_end || next_start - previous_end > MAX_INTERPOLATED_GAP {
-+        return None;
-+    }
-+    let mut from = (previous_end + END_PADDING).min(next_start);
-+    if let Some(previous) = previous {
-+        from = from.max(previous.end_time);
-+    }
-+    if !within_budget(from, next_start, length) {
-+        return None;
-+    }
-+    Some(Span { from, to: next_start, lower: start, upper: index })
-+}
-+
-+fn within_budget(from: f64, to: f64, span: usize) -> bool {
-+    to > from && (to - from) <= DURATION_OVERHEAD + MAX_SECONDS_PER_CHARACTER * span as f64
++#[cfg(not(feature = "transcription"))]
++pub async fn status(_app: AppHandle) -> &'static str {
++    "unsupported"
 +}
 diff --git a/src-tauri/src/transcription/audio.rs b/src-tauri/src/transcription/audio.rs
 new file mode 100644
@@ -1611,14 +1047,14 @@ index 0000000..fa0e09d
 +}
 diff --git a/src-tauri/src/transcription/mod.rs b/src-tauri/src/transcription/mod.rs
 new file mode 100644
-index 0000000..f9c2722
+index 0000000..be07601
 --- /dev/null
 +++ b/src-tauri/src/transcription/mod.rs
 @@ -0,0 +1,130 @@
 +// On-device Sasayaki transcription for Linux: sherpa-onnx + ReazonSpeech k2 v2,
-+// following the pipeline of Hoshi Reader Android and the aligner of the macOS app.
++// following the pipeline of Hoshi Reader Android. Used by transcriber/linux.rs; the
++// transcript is aligned to the book by the shared aligner (aligner.rs).
 +
-+pub mod aligner;
 +pub mod audio;
 +pub mod model;
 +mod pipeline;
@@ -1629,7 +1065,7 @@ index 0000000..f9c2722
 +
 +use sherpa_onnx::{OfflineModelConfig, OfflineRecognizer, OfflineRecognizerConfig, OfflineTransducerModelConfig};
 +
-+pub use crate::transcriber::SasayakiToken as Token;
++pub use crate::sasayaki::SasayakiToken as Token;
 +use pipeline::{Batch, OrderedScheduler, Pipeline, Recognition, Stitcher, project_tokens};
 +
 +/// Concurrent recognitions and ONNX threads per recognition, from the CPU count.

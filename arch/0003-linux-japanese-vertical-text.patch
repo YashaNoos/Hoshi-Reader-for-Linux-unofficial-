@@ -1,8 +1,8 @@
 diff --git a/src/lib/Reader.svelte b/src/lib/Reader.svelte
-index 1ba8f98..4ccc0b1 100644
+index 0bbef88..d430db3 100644
 --- a/src/lib/Reader.svelte
 +++ b/src/lib/Reader.svelte
-@@ -1845,7 +1845,7 @@
+@@ -1858,7 +1858,7 @@
        {@const top = Math.round((frameHeight * effectivePadding(readerConfig.verticalPadding, readerConfig.maxHeight, frameHeight)) / 200)}
        {@const size = Math.max(11, Math.round(readerConfig.fontSize * 0.6))}
        {@const underButtons = macChrome && top + chromeInset / 2 - size / 2 < windowButtonsBottom}
@@ -22,7 +22,7 @@ index 71e6d8f..9e275b4 100644
 +export const isLinux = /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
  export const useHttpScheme = /Windows|Android/.test(navigator.userAgent);
 diff --git a/src/lib/readerConfig.svelte.ts b/src/lib/readerConfig.svelte.ts
-index 54f2f6f..6b8907a 100644
+index 9933c13..934428c 100644
 --- a/src/lib/readerConfig.svelte.ts
 +++ b/src/lib/readerConfig.svelte.ts
 @@ -1,5 +1,5 @@
@@ -55,7 +55,7 @@ index 54f2f6f..6b8907a 100644
  
  export type ReaderConfig = {
    theme: ThemeName;
-@@ -147,6 +159,11 @@ if (legacy.customBackgroundColor !== undefined) {
+@@ -149,6 +161,11 @@ if (legacy.customBackgroundColor !== undefined) {
    saveReaderConfig();
  }
  
@@ -68,7 +68,7 @@ index 54f2f6f..6b8907a 100644
    if (!legacy.showCharacters) readerConfig.progressCount = "Off";
    delete legacy.showCharacters;
 diff --git a/src/reader/boot.js b/src/reader/boot.js
-index 70e49a5..45e8e1a 100644
+index 600280c..d38e2ed 100644
 --- a/src/reader/boot.js
 +++ b/src/reader/boot.js
 @@ -104,7 +104,7 @@
@@ -88,7 +88,7 @@ index 70e49a5..45e8e1a 100644
        ${avoidBreak ? "p { break-inside: avoid !important; -webkit-column-break-inside: avoid !important; }" : ""}
        ${
          advanced
-@@ -211,6 +212,7 @@
+@@ -212,6 +213,7 @@
        }
      `;
  
@@ -165,10 +165,10 @@ index 0900bf2..5fa714f 100644
      countChars(text) {
          return Array.from(this.normalizeText(text)).length;
 diff --git a/src/reader/scrollboot.js b/src/reader/scrollboot.js
-index 1d277b2..0a01d76 100644
+index 0a00465..4b88132 100644
 --- a/src/reader/scrollboot.js
 +++ b/src/reader/scrollboot.js
-@@ -55,7 +55,7 @@
+@@ -56,7 +56,7 @@
          const writingMode = vertical ? 'vertical-rl' : 'horizontal-tb';
          const imgWidth = `calc(${100 - paddingX}vw - 1px)`;
          const imgHeight = `${100 - paddingY}vh`;
@@ -177,7 +177,7 @@ index 1d277b2..0a01d76 100644
          const furiganaLine = 'rgba(150, 150, 150, 0.75)';
  
          const contentSizeCss = vertical
-@@ -181,6 +181,7 @@
+@@ -182,6 +182,7 @@
              hoshi-html {
                  background: transparent !important;
              }
@@ -185,7 +185,7 @@ index 1d277b2..0a01d76 100644
              body, hoshi-body {
                  -webkit-text-size-adjust: none !important;
                  font-family: ${fontFamily} !important;
-@@ -270,6 +271,7 @@
+@@ -272,6 +273,7 @@
                  background-color: var(--hoshi-sasayaki-background-color) !important;
              }
          `;

@@ -2,8 +2,8 @@
 # https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-
 # Maintainer: YashaNoos (https://github.com/YashaNoos)
 pkgname=hoshi-reader-linux
-pkgver=1.1.2
-pkgrel=12
+pkgver=1.2.0
+pkgrel=1
 pkgdesc='Japanese EPUB reader with pop-up dictionary and Anki mining (unofficial Linux build)'
 arch=('x86_64')
 url='https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-'
@@ -45,20 +45,20 @@ source=("$pkgname::git+$_upstream_url.git#tag=v$pkgver"
 noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
 # Refresh the patch sums with `updpkgsums` after changing a patch.
 sha256sums=('SKIP'
-            '768f6141a34787add9253f8645c19096c0717699d8f20a74fa2fd2d7f7a3b99f'
-            '7e84134f5d034b1d567a70e4b1fb977db169e189a2a4c0cab60d79ed33fd17a7'
-            '229af18b277e0bec3075cea5bd7ba4c08cd50e31d1c43623143ad633a50d5670'
+            '1f0f4c82dc82880628f4674acedda5cfd22c884999f42cfa0331ac1651a6e498'
+            'a427a786a50c20f2771eabd817e7e16070b060456f46bed53b74eb62a5946b38'
+            '954d50a359cc233f616335d6e02191c8aa774243fe54e92cff4639021bb06c8b'
             '8dcb418562d79a55b424461605c1ff247f0725edb9655b10da3108843aab4f7f'
-            '1541372f7df9e74c3f972ba69d6d6e88605abc47e5baa3bca1c7cf372c6e2954'
-            'cbfb785acaa4d47af30347e19b6504893baec07ca791a8104cc8fef5da895707'
-            '195263e7a2d959747d2a43baf32d51d54278f241d5345f6aedae45a407885f05'
-            'b7d845ef4bf62d8beb6cdfc6cf5f6f34440a140eb231c909256f146bbf92207b'
+            '1ae617fef1f855205d330e98fb03b9788048dad40edb40348b34d58926ac96ff'
+            'f457c5ff68e0e30491735ef3eb684b2294e39f29376eb8b259c5ff1eca11de49'
+            'e90434a79e05d39da63343320ad5473c4afba9d956a4ab2d488ecee190741973'
+            'f48124c4d8bf61a905ca87e3034ea3775f10941e5957f5c49cc327c129a4f888'
             'a67b2c5f84c9cec03bff559df5a5105995e59fcf41f3be88cd849ef6bf166804'
             '1daf28728a3a43d7d5d2403cc7de902ae0374d2dd79c8a1f6b96ca837e679633'
-            '2c9dc953975b25e99ea292a43eff749009cccf447812a0624672f2fc92dbef96'
-            'a6d55e73fba553653fa9cc49e8e02f89b0e1058db7aef2517f2b9e554dd69dad'
-            'e6e5edb1759a6602cf29fe2b8e0dede64debb8a2b97eb0bfb95d4feb1c0c7d02'
-            '3702cfd26542eb6fdb74453d8126b03f37a8d396f4710f9061d3919201af2be7'
+            '4fc131476fbd19b0d080ca3568fde99ca3251e6d8d1a39e95e017221f4e275c1'
+            'e2b3779df416537b2a7fa65840cae415530f0089a37f35d3aab078a52758288c'
+            'd828d64cc38f2d8bc8a62d7e7d093db7864588b839ad9b2c4e4e48e185923322'
+            'd1a0a0c408fe7e1d3eba633cde6c832e1f30634c3695e18b0ddd5a3f5d23692c'
             'b170fb81361808180adeec2c5d133b04c7a9eed52c5bf0dc4cc789371c04b6a8'
             '0b294620de781b316fd593a3ac2d369399a4c119b782c53ccafffa1d5ee1d2fe'
             '98188e4ee491aacb0917190ad0b0b948f7b3832af5d81b6691b5442785d70060'

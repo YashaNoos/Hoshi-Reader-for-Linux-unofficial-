@@ -1,5 +1,5 @@
 diff --git a/src-tauri/Cargo.lock b/src-tauri/Cargo.lock
-index 333e082..91bb7cb 100644
+index ba94e4d..2f0e587 100644
 --- a/src-tauri/Cargo.lock
 +++ b/src-tauri/Cargo.lock
 @@ -8,6 +8,17 @@ version = "2.0.1"
@@ -572,14 +572,14 @@ index 333e082..91bb7cb 100644
 +
  [[package]]
  name = "hoshi-reader"
- version = "1.1.2"
+ version = "1.2.0"
  dependencies = [
   "apple-native-keyring-store",
 + "arboard",
   "base64 0.23.1",
   "chrono",
   "hoshidicts",
-@@ -1450,6 +1851,7 @@ dependencies = [
+@@ -1451,6 +1852,7 @@ dependencies = [
   "serde_json",
   "sha1",
   "sha2 0.11.0",
@@ -587,7 +587,7 @@ index 333e082..91bb7cb 100644
   "tauri",
   "tauri-build",
   "tauri-plugin-dialog",
-@@ -1464,6 +1866,7 @@ dependencies = [
+@@ -1465,6 +1867,7 @@ dependencies = [
   "windows",
   "windows-native-keyring-store",
   "windows-sys 0.61.2",
@@ -595,7 +595,7 @@ index 333e082..91bb7cb 100644
   "zip 8.6.0",
  ]
  
-@@ -1780,6 +2183,16 @@ dependencies = [
+@@ -1781,6 +2184,16 @@ dependencies = [
   "cfb",
  ]
  
@@ -612,7 +612,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "ipnet"
  version = "2.12.2"
-@@ -1985,6 +2398,12 @@ dependencies = [
+@@ -1986,6 +2399,12 @@ dependencies = [
   "log",
  ]
  
@@ -625,7 +625,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "libappindicator"
  version = "0.9.0"
-@@ -2201,6 +2620,12 @@ dependencies = [
+@@ -2212,6 +2631,12 @@ dependencies = [
   "windows-sys 0.61.2",
  ]
  
@@ -638,7 +638,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "native-tls"
  version = "0.2.18"
-@@ -2248,6 +2673,39 @@ version = "1.0.6"
+@@ -2259,6 +2684,39 @@ version = "1.0.6"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
  
@@ -678,7 +678,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "num-complex"
  version = "0.4.6"
-@@ -2272,6 +2730,27 @@ dependencies = [
+@@ -2283,6 +2741,27 @@ dependencies = [
   "num-traits",
  ]
  
@@ -706,7 +706,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "num-traits"
  version = "0.2.19"
-@@ -2323,6 +2802,7 @@ dependencies = [
+@@ -2334,6 +2813,7 @@ dependencies = [
   "block2",
   "objc2",
   "objc2-core-foundation",
@@ -714,7 +714,7 @@ index 333e082..91bb7cb 100644
   "objc2-foundation",
  ]
  
-@@ -2603,6 +3083,26 @@ dependencies = [
+@@ -2614,6 +3094,26 @@ dependencies = [
   "cmake",
  ]
  
@@ -741,7 +741,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "osakit"
  version = "0.3.1"
-@@ -2642,6 +3142,12 @@ dependencies = [
+@@ -2653,6 +3153,12 @@ dependencies = [
   "system-deps",
  ]
  
@@ -754,7 +754,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "parking_lot"
  version = "0.12.5"
-@@ -2671,6 +3177,17 @@ version = "2.3.2"
+@@ -2682,6 +3188,17 @@ version = "2.3.2"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
  
@@ -772,7 +772,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "phf"
  version = "0.13.1"
-@@ -2730,6 +3247,17 @@ version = "0.2.17"
+@@ -2741,6 +3258,17 @@ version = "0.2.17"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
  
@@ -790,7 +790,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "pkg-config"
  version = "0.3.34"
-@@ -2775,6 +3303,20 @@ dependencies = [
+@@ -2786,6 +3314,20 @@ dependencies = [
   "miniz_oxide 0.8.9",
  ]
  
@@ -811,7 +811,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "portable-atomic"
  version = "1.15.0"
-@@ -3265,6 +3807,25 @@ version = "1.2.0"
+@@ -3276,6 +3818,25 @@ version = "1.2.0"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
  
@@ -837,7 +837,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "security-framework"
  version = "3.7.0"
-@@ -3527,12 +4088,28 @@ version = "2.0.1"
+@@ -3538,12 +4099,28 @@ version = "2.0.1"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
  
@@ -866,7 +866,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "siphasher"
  version = "1.0.3"
-@@ -3674,6 +4251,178 @@ dependencies = [
+@@ -3685,6 +4262,178 @@ dependencies = [
   "serde_json",
  ]
  
@@ -1045,7 +1045,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "syn"
  version = "1.0.109"
-@@ -4454,9 +5203,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+@@ -4465,9 +5214,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
  dependencies = [
   "pin-project-lite",
@@ -1067,7 +1067,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "tracing-core"
  version = "0.1.36"
-@@ -4498,6 +5259,17 @@ dependencies = [
+@@ -4509,6 +5270,17 @@ dependencies = [
   "windows-sys 0.61.2",
  ]
  
@@ -1085,7 +1085,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "try-lock"
  version = "0.2.5"
-@@ -4522,6 +5294,17 @@ version = "1.20.1"
+@@ -4533,6 +5305,17 @@ version = "1.20.1"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
  
@@ -1103,7 +1103,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "unic-char-property"
  version = "0.9.0"
-@@ -4784,6 +5567,76 @@ dependencies = [
+@@ -4795,6 +5578,76 @@ dependencies = [
   "web-sys",
  ]
  
@@ -1180,7 +1180,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "web-sys"
  version = "0.3.105"
-@@ -5373,6 +6226,24 @@ version = "0.57.1"
+@@ -5384,6 +6237,24 @@ version = "0.57.1"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
  
@@ -1205,7 +1205,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "writeable"
  version = "0.6.4"
-@@ -5444,6 +6315,23 @@ dependencies = [
+@@ -5455,6 +6326,23 @@ dependencies = [
   "pkg-config",
  ]
  
@@ -1229,7 +1229,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "xattr"
  version = "1.6.1"
-@@ -5477,6 +6365,87 @@ dependencies = [
+@@ -5488,6 +6376,87 @@ dependencies = [
   "synstructure",
  ]
  
@@ -1317,7 +1317,7 @@ index 333e082..91bb7cb 100644
  [[package]]
  name = "zerofrom"
  version = "0.1.8"
-@@ -5601,3 +6570,44 @@ checksum = "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296"
+@@ -5612,3 +6581,44 @@ checksum = "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296"
  dependencies = [
   "zune-core",
  ]
@@ -1363,7 +1363,7 @@ index 333e082..91bb7cb 100644
 + "winnow 1.0.4",
 +]
 diff --git a/src-tauri/Cargo.toml b/src-tauri/Cargo.toml
-index 1d92360..106e5bf 100644
+index de5623a..3a3fbc0 100644
 --- a/src-tauri/Cargo.toml
 +++ b/src-tauri/Cargo.toml
 @@ -50,6 +50,11 @@ rubato = "5"
@@ -1415,10 +1415,10 @@ index 817b7d7..558407b 100644
 +    LAST_TEXT.lock().unwrap().take()
 +}
 diff --git a/src-tauri/src/pcm.rs b/src-tauri/src/pcm.rs
-index e5c204e..90a6d51 100644
+index 8636dc0..0775586 100644
 --- a/src-tauri/src/pcm.rs
 +++ b/src-tauri/src/pcm.rs
-@@ -97,6 +97,101 @@ unsafe fn read_media_foundation(
+@@ -93,6 +93,101 @@ unsafe fn read_media_foundation(
      }
  }
  

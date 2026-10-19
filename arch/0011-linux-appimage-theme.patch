@@ -40,12 +40,12 @@ index 0000000..2e4fef6
 +    DESKTOP_DARK.get().map(|dark| if *dark { "dark" } else { "light" })
 +}
 diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
-index 391aeb6..7701b94 100644
+index 1c64046..34f4dae 100644
 --- a/src-tauri/src/lib.rs
 +++ b/src-tauri/src/lib.rs
-@@ -1,6 +1,8 @@
- pub type Fallible<T = ()> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
+@@ -2,6 +2,8 @@ pub type Fallible<T = ()> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
  
+ mod aligner;
  mod anki;
 +#[cfg(target_os = "linux")]
 +mod appimage_theme;
@@ -61,7 +61,7 @@ index 391aeb6..7701b94 100644
      #[cfg(target_os = "macos")]
      writing_tools::disable();
      #[cfg(target_os = "macos")]
-@@ -158,6 +162,8 @@ pub fn run() {
+@@ -151,6 +155,8 @@ pub fn run() {
              transcriber::sasayaki_transcribe,
              #[cfg(target_os = "linux")]
              context_menu::popup_menu_at_pointer,
@@ -71,7 +71,7 @@ index 391aeb6..7701b94 100644
              media_controls::media_controls_metadata,
              #[cfg(windows)]
 diff --git a/src/App.svelte b/src/App.svelte
-index 7bb562e..ce9108d 100644
+index 73d5470..06856f4 100644
 --- a/src/App.svelte
 +++ b/src/App.svelte
 @@ -6,6 +6,7 @@
@@ -82,7 +82,7 @@ index 7bb562e..ce9108d 100644
    import Bookshelf from "./lib/Bookshelf.svelte";
    import DictionarySearch from "./lib/DictionarySearch.svelte";
    import Statistics from "./lib/Statistics.svelte";
-@@ -98,10 +99,17 @@
+@@ -99,10 +100,17 @@
      if (errors.length) await message(errors.join("\n"), { title: "Error", kind: "error" });
    }
  
