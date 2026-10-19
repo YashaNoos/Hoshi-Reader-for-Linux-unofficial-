@@ -259,15 +259,22 @@ index 0f6eb86..8a69a62 100644
      .await
      .unwrap()?;
 diff --git a/src/lib/MatchDialog.svelte b/src/lib/MatchDialog.svelte
-index a108af4..f961af1 100644
+index a108af4..88f8bbb 100644
 --- a/src/lib/MatchDialog.svelte
 +++ b/src/lib/MatchDialog.svelte
-@@ -67,6 +67,14 @@
+@@ -67,6 +67,21 @@
      else subtitleFile = result;
    }
  
 +  // Linux build (0018): 1 = upstream's cutting (it never makes a 1-character piece a cue).
 +  const MAX_MERGE_SHORT_CUES = 6;
++  const MERGE_SHORT_CUES_HELP = [
++    "Joins very short bits of a sentence to the text next to them, so they don’t flash by as a line of their own. The number is the longest bit that gets joined, in characters (punctuation not counted).",
++    "1 (default): |だが、|それは無理だろう、|たぶん|。",
++    "≤ 2: |だが、それは無理だろう、|たぶん|。",
++    "≤ 3: |だが、それは無理だろう、たぶん|。",
++    "Applies on the next Match.",
++  ].join("\n");
 +  const mergeShortCues = $derived(Math.min(MAX_MERGE_SHORT_CUES, Math.max(1, sasayakiConfig.sasayakiMergeShortCues)));
 +  function setMergeShortCues(value: number) {
 +    sasayakiConfig.sasayakiMergeShortCues = value;
@@ -277,7 +284,7 @@ index a108af4..f961af1 100644
    async function start() {
      isMatching = true;
      matchError = "";
-@@ -77,9 +85,10 @@
+@@ -77,9 +92,10 @@
            id: bookId,
            path: file,
            performance: sasayakiConfig.sasayakiTranscriptionPerformance,
@@ -289,15 +296,13 @@ index a108af4..f961af1 100644
        onMatched();
      } catch (e) {
        matchError = String(e);
-@@ -183,6 +192,36 @@
+@@ -183,6 +199,34 @@
          </div>
        {/if}
  
 +      <div
 +        class="flex items-center justify-between gap-3"
-+        title={useAudio
-+          ? "Comma-separated pieces this short (だが、, 、きっと。) are joined to the text next to them instead of becoming their own cue. 1 is the default and cuts like the other platforms. Applies the next time you press Match."
-+          : "Subtitle cues this short (だが、, 、きっと。) are joined to the cue next to them in the same sentence. 1 is the default and keeps the subtitle's cues as they are. Applies the next time you press Match."}
++        title={MERGE_SHORT_CUES_HELP}
 +      >
 +        <span class="text-sm">Merge short cues</span>
 +        <div class="join">

@@ -497,7 +497,7 @@ index d23b823..76c34ef 100644
              pending: VecDeque::new(),
              scheduled_through: from,
 diff --git a/src/lib/MatchDialog.svelte b/src/lib/MatchDialog.svelte
-index f961af1..5571efe 100644
+index 88f8bbb..51adfa5 100644
 --- a/src/lib/MatchDialog.svelte
 +++ b/src/lib/MatchDialog.svelte
 @@ -1,7 +1,7 @@
@@ -554,7 +554,7 @@ index f961af1..5571efe 100644
        transcript !== null &&
        transcript.through > 0 &&
        !(transcript.duration > 0 && transcript.through + 1.5 >= transcript.duration),
-@@ -86,6 +113,7 @@
+@@ -93,6 +120,7 @@
            path: file,
            performance: sasayakiConfig.sasayakiTranscriptionPerformance,
            mergeShortCues,
@@ -562,7 +562,7 @@ index f961af1..5571efe 100644
            onProgress,
          });
        else await invoke("sasayaki_match", { id: bookId, path: file, mergeShortCues });
-@@ -192,6 +220,32 @@
+@@ -199,6 +227,32 @@
          </div>
        {/if}
  
@@ -594,7 +594,7 @@ index f961af1..5571efe 100644
 +
        <div
          class="flex items-center justify-between gap-3"
-         title={useAudio
+         title={MERGE_SHORT_CUES_HELP}
 diff --git a/src/lib/aboutLicensesLinux.ts b/src/lib/aboutLicensesLinux.ts
 index dc95cae..54caabb 100644
 --- a/src/lib/aboutLicensesLinux.ts
