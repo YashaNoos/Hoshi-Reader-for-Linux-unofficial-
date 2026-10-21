@@ -6,6 +6,8 @@ name: Build packages
 #    workflow artifacts. Pull requests that only change documentation are not built.
 #  - pushing a tag like `1.1.2-2` (pkgver-pkgrel): also publishes a GitHub release with
 #    the .pkg.tar.zst, the experimental AppImage and their SHA-256 checksums
+#  - manual run on a test branch (test/<name>): AppImage only, published as the
+#    pre-release test-<name> so a bug reporter can download it. Never marked Latest.
 # Pushes to main are not built: changes are built on their branch before they are
 # merged, and every release tag builds again from scratch.
 
@@ -30,6 +32,8 @@ permissions:
 
 jobs:
   build:
+    # test branches only need the AppImage
+    if: ${{ !startsWith(github.ref_name, 'test/') }}
     runs-on: ubuntu-latest
     container:
       image: archlinux:base-devel
@@ -157,7 +161,10 @@ jobs:
               {"bundleMediaFramework": True, "files": files}}}}))')
           pnpm tauri build --bundles appimage --config "$config" 2>&1 | tee ../appimage-build.log
           cd "$GITHUB_WORKSPACE"
-          out="Hoshi-Reader-for-Linux-${pkgver}-${pkgrel}-x86_64.AppImage"
+          # a test branch test/<name> gives e.g. ...-1.2.0-2-test-<name>-x86_64.AppImage
+          suffix=""
+          case "$GITHUB_REF_NAME" in test/*) suffix="-test-${GITHUB_REF_NAME#test/}" ;; esac
+          out="Hoshi-Reader-for-Linux-${pkgver}-${pkgrel}${suffix}-x86_64.AppImage"
           mv hoshi-src/src-tauri/target/release/bundle/appimage/*.AppImage "$out"
           sha256sum "$out" > "$out.sha256"
           # list of bundled Ubuntu packages, versions and source packages (see THIRD_PARTY.md)
@@ -218,3 +225,34 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/publish-release.sh "$GITHUB_REF_NAME" dist
+
+  # Manual run on a test branch test/<name>: the AppImage as pre-release test-<name>, with
+  # the notes from .github/test-release-notes.md. Delete the release and its tag when done.
+  test-prerelease:
+    needs: appimage
+    if: ${{ github.event_name == 'workflow_dispatch' && startsWith(github.ref_name, 'test/') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: appimage
+          path: dist
+      - name: Publish the test pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="test-${GITHUB_REF_NAME#test/}"
+          ls -l dist
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber dist/*
+          else
+            # first line of the notes file (a "# " heading) is the title, the rest the notes
+            title=$(head -n 1 .github/test-release-notes.md | sed 's/^# *//')
+            tail -n +2 .github/test-release-notes.md > "$RUNNER_TEMP/notes.md"
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --prerelease --latest=false --title "Test build: $title" \
+              --notes-file "$RUNNER_TEMP/notes.md" dist/*
+          fi

@@ -1,0 +1,15 @@
+diff --git a/src/main.ts b/src/main.ts
+index 848af7b..0e8d9dd 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -10,7 +10,9 @@ mount(App, {
+   target: document.getElementById("app")!,
+ });
+ 
++// TEST BUILD for issue #3 (blurry popup text while scrolling): interface zoom 100%
++// instead of upstream's 110%, so whole CSS pixels land on whole screen pixels.
+ getCurrentWebview()
+-  .setZoom(1.1)
++  .setZoom(1.0)
+   .catch(() => {})
+   .then(() => getCurrentWindow().show());
