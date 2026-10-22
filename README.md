@@ -15,7 +15,7 @@ patches that make it build and run on Linux, plus the packaging to install it.
 | | |
 |---|---|
 | **Based on upstream** | v1.2.0 |
-| **Linux build revision** | 1.2.0-2 |
+| **Linux build revision** | 1.2.0-3 |
 | **Platform** | Linux x86_64 |
 | **Tested on** | Arch Linux, KDE Plasma (Wayland): package and AppImage<br>Ubuntu 26.04.1, GNOME: AppImage |
 | **License** | GPL-3.0-or-later, same as upstream |
@@ -156,6 +156,7 @@ Each patch in [`arch/`](arch) is one self-contained change:
 | `0018-sasayaki-merge-short-cues` | Sasayaki: new "Merge short cues" setting in Match, for Transcription and Subtitles. The default, ≤ 1 character, cuts cues exactly like upstream. Raised to 2–6, a comma-separated piece that short is not made a cue on its own: a short opening (だが、) joins the text after it, a short ending (、きっと。) the text before it. With subtitles, a cue that short joins the cue next to it when both follow each other in the book within one sentence. Not in upstream. |
 | `0019-sasayaki-parakeet-ja` | Transcription can use NVIDIA's parakeet-tdt_ctc-0.6b-ja model (the default) or ReazonSpeech k2 (Match → Transcription → Model). Parakeet hears names and clauses after pauses that ReazonSpeech dropped, and writes words in kanji like the book (明日, not あした), so far more of the text matches. The audio is given to it in pieces of 15–30 s, since it uses the context; ReazonSpeech keeps the cutting of the other platforms. A saved transcription remembers its model: switching model transcribes the audio again. |
 | `0020-sasayaki-aligner-unlikely-matches` | Sasayaki matching: a lone kana that matches between differences is ignored when it cannot belong there. Example: the transcript writes あした for the book's 明日, and its あ was matched to the book's next あ (「あ、明日？」), giving that cue the wrong audio. Not in upstream. |
+| `0021-linux-wheel-whole-pixels` | Text no longer turns blurry on every other mouse-wheel click ([#3](../../issues/3)). On KDE a click reaches WebKitGTK as 1.5 steps, which it multiplies by a step size taken from the window height; at about half of all window heights that gave half-pixel distances (e.g. 139.5 px), so every other click left the text between screen pixels. Each click is now rounded to whole pixels (140, 139, 140, … px), with the same total distance. `HOSHI_WHEEL_SNAP=0` turns it off. |
 
 The compiler flags in the PKGBUILD work around newer GCC versions (15/16) breaking
 upstream's C++ dictionary engine because of missing standard `#include`s.
@@ -193,7 +194,7 @@ Components added by the Linux build:
 | **Symphonia** | Audio decoding (mp3, AAC/m4b/m4a, ALAC, FLAC, Ogg Vorbis, WAV) for transcription and duration reading. | MPL-2.0 | https://github.com/pdeljanov/Symphonia |
 | **arboard** | Clipboard access on Wayland and X11. | MIT OR Apache-2.0 | https://github.com/1Password/arboard |
 | **zbus-secret-service-keyring-store** | Stores Google Drive sign-in tokens in the desktop Secret Service (KWallet, GNOME Keyring). | MIT OR Apache-2.0 | https://github.com/open-source-cooperative/zbus-secret-service-keyring-store |
-| **gtk-rs (gtk3-rs)** | Positioning context menus relative to the app window on Wayland. | MIT | https://github.com/gtk-rs/gtk3-rs |
+| **gtk-rs (gtk3-rs)** | Positioning context menus relative to the app window on Wayland; rounding mouse-wheel scrolling to whole pixels. | MIT | https://github.com/gtk-rs/gtk3-rs |
 
 [THIRD_PARTY.md](THIRD_PARTY.md) has the same list with more detail on the source code.
 The list is also shown in the app under About, Dependencies and Attribution.
