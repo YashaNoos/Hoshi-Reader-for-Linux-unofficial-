@@ -109,7 +109,6 @@ Exec=hoshi-reader
 Icon=hoshi-reader
 StartupWMClass=hoshi-reader
 Categories=Education;Literature;Viewer;
-MimeType=application/epub+zip;
 Terminal=false
 DESKTOP
   install -Dm644 src-tauri/icons/32x32.png   "$pkgdir/usr/share/icons/hicolor/32x32/apps/hoshi-reader.png"
