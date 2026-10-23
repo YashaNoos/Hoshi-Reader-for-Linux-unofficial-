@@ -236,10 +236,10 @@ index be07601..b40e9ab 100644
      let stop = AtomicBool::new(false);
      let decoded = audio::decode(path, audio_from, &stop, |chunk| {
 diff --git a/src-tauri/src/transcription/model.rs b/src-tauri/src/transcription/model.rs
-index 747a2b8..ac9a2b1 100644
+index 747a2b8..531dbf2 100644
 --- a/src-tauri/src/transcription/model.rs
 +++ b/src-tauri/src/transcription/model.rs
-@@ -1,5 +1,5 @@
+@@ -1,14 +1,64 @@
 -// ReazonSpeech k2 v2 (Apache-2.0) model files: the same pinned revision and checksums
 -// as Hoshi Reader Android, downloaded on first use and verified with SHA-256.
 +// Speech model files (parakeet or ReazonSpeech), downloaded on first use and verified
@@ -247,7 +247,9 @@ index 747a2b8..ac9a2b1 100644
  
  use std::fs;
  use std::io::Write;
-@@ -8,7 +8,56 @@ use std::sync::atomic::{AtomicBool, Ordering};
+ use std::path::{Path, PathBuf};
+ use std::sync::atomic::{AtomicBool, Ordering};
++use std::time::Duration;
  
  use sha2::{Digest, Sha256};
  
@@ -305,7 +307,7 @@ index 747a2b8..ac9a2b1 100644
  
  pub struct ModelFile {
      pub name: &'static str,
-@@ -17,7 +66,18 @@ pub struct ModelFile {
+@@ -17,7 +67,18 @@ pub struct ModelFile {
      sha256: &'static str,
  }
  
@@ -325,7 +327,7 @@ index 747a2b8..ac9a2b1 100644
      ModelFile { name: "encoder.int8.onnx", remote: "encoder-epoch-99-avg-1.int8.onnx", bytes: 154_670_139,
          sha256: "2c7bd08a8a99f9ddd0d9e458456577b1f6279214e51426f114f9eced44c54e1d" },
      ModelFile { name: "decoder.int8.onnx", remote: "decoder-epoch-99-avg-1.int8.onnx", bytes: 2_959_337,
-@@ -38,12 +98,12 @@ pub struct ModelPaths {
+@@ -38,12 +99,12 @@ pub struct ModelPaths {
  }
  
  impl ModelPaths {
@@ -340,7 +342,7 @@ index 747a2b8..ac9a2b1 100644
      }
  }
  
-@@ -67,32 +127,41 @@ fn sha256(path: &Path) -> std::io::Result<String> {
+@@ -67,32 +128,79 @@ fn sha256(path: &Path) -> std::io::Result<String> {
  }
  
  /// Returns ready model paths, downloading (with `progress` in 0..=1) when needed.
@@ -359,9 +361,43 @@ index 747a2b8..ac9a2b1 100644
 +        let custom = Path::new(&custom);
 +        let dir = Some(custom.join(model.dir_name())).filter(|dir| dir.is_dir());
 +        return Ok(Some(ModelPaths::in_dir(dir.as_deref().unwrap_or(custom), model.files())));
++    }
++    fetch(model.base(), model.files(), dir, cancel, progress).await
++}
++
++const CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
++/// A download that receives nothing for this long has stalled: it ends with an error, so
++/// Match can be pressed again. It resets whenever data arrives (no limit on the total).
++const READ_TIMEOUT: Duration = Duration::from_secs(if cfg!(test) { 2 } else { 45 });
++
++/// Resolves once Pause sets `cancel`, so a download waiting on the network can stop.
++async fn cancelled(cancel: &AtomicBool) {
++    while !cancel.load(Ordering::Relaxed) {
++        tokio::time::sleep(Duration::from_millis(150)).await;
++    }
++}
++
++fn download_error(error: reqwest::Error) -> String {
++    if error.is_timeout() {
++        format!("Model download stalled (no data for {} s). Press Match to try again.", READ_TIMEOUT.as_secs())
++    } else {
++        format!("Model download failed: {error}")
++    }
++}
++
++/// Deletes a partly downloaded file on every way out, unless it was completed.
++struct Partial<'a> {
++    path: &'a Path,
++    complete: bool,
++}
++
++impl Drop for Partial<'_> {
++    fn drop(&mut self) {
++        if !self.complete {
++            fs::remove_file(self.path).ok();
++        }
      }
 -    fetch(BASE, dir, cancel, progress).await
-+    fetch(model.base(), model.files(), dir, cancel, progress).await
  }
  
  pub(crate) async fn fetch(
@@ -385,18 +421,140 @@ index 747a2b8..ac9a2b1 100644
 +    let total: u64 = files.iter().map(|f| f.bytes).sum();
 +    let mut done: u64 = files.iter().filter(|f| present(f)).map(|f| f.bytes).sum();
      progress(done as f64 / total as f64);
-     let client = reqwest::Client::new();
+-    let client = reqwest::Client::new();
 -    for file in &FILES {
++    let client = reqwest::Client::builder()
++        .connect_timeout(CONNECT_TIMEOUT)
++        .read_timeout(READ_TIMEOUT)
++        .build()
++        .map_err(download_error)?;
 +    for file in files {
          let target = dir.join(file.name);
          if present(file) && sha256(&target).is_ok_and(|h| h == file.sha256) {
              continue;
-@@ -136,5 +205,5 @@ pub(crate) async fn fetch(
+@@ -101,24 +209,23 @@ pub(crate) async fn fetch(
+             done -= file.bytes;
+         }
+         let partial = dir.join(format!("{}.part", file.name));
+-        let mut response = client
+-            .get(format!("{base}{}", file.remote))
+-            .send()
+-            .await
+-            .and_then(|r| r.error_for_status())
+-            .map_err(|e| format!("Model download failed: {e}"))?;
++        let request = client.get(format!("{base}{}", file.remote)).send();
++        let mut response = tokio::select! {
++            response = request => response.and_then(|r| r.error_for_status()).map_err(download_error)?,
++            _ = cancelled(cancel) => return Ok(None),
++        };
+         let mut out = fs::File::create(&partial).map_err(|e| format!("Cannot write model: {e}"))?;
++        let mut cleanup = Partial { path: &partial, complete: false };
+         let mut hasher = Sha256::new();
+         let mut received = 0u64;
+-        while let Some(chunk) = response.chunk().await.map_err(|e| format!("Model download failed: {e}"))? {
+-            if cancel.load(Ordering::Relaxed) {
+-                drop(out);
+-                fs::remove_file(&partial).ok();
+-                return Ok(None);
+-            }
++        loop {
++            let chunk = tokio::select! {
++                chunk = response.chunk() => chunk.map_err(download_error)?,
++                _ = cancelled(cancel) => return Ok(None),
++            };
++            let Some(chunk) = chunk else { break };
+             received += chunk.len() as u64;
+             if received > file.bytes {
+-                fs::remove_file(&partial).ok();
+                 return Err("Model download is larger than expected".into());
+             }
+             hasher.update(&chunk);
+@@ -128,13 +235,84 @@ pub(crate) async fn fetch(
+         out.flush().ok();
+         drop(out);
+         if received != file.bytes || hex(&hasher.finalize()) != file.sha256 {
+-            fs::remove_file(&partial).ok();
+             return Err("Model integrity verification failed".into());
+         }
+         fs::rename(&partial, &target).map_err(|e| format!("Cannot save model: {e}"))?;
++        cleanup.complete = true;
+         done += file.bytes;
      }
      fs::write(dir.join(VERIFIED_MARKER), b"").ok();
      progress(1.0);
 -    Ok(Some(ModelPaths::in_dir(dir)))
 +    Ok(Some(ModelPaths::in_dir(dir, files)))
++}
++
++#[cfg(test)]
++mod tests {
++    use std::io::{Read, Write};
++    use std::net::TcpListener;
++    use std::sync::Arc;
++    use std::time::{Duration, Instant};
++
++    use super::*;
++
++    /// A server that accepts one download, optionally starts the reply, then goes silent
++    /// without closing the connection (like a frozen Wi-Fi or hotel network).
++    fn stalled_server(start_reply: bool) -> String {
++        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
++        let address = listener.local_addr().unwrap();
++        std::thread::spawn(move || {
++            let (mut socket, _) = listener.accept().unwrap();
++            let mut request = [0u8; 1024];
++            socket.read(&mut request).ok();
++            if start_reply {
++                socket.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 1000000\r\n\r\n0123456789").ok();
++            }
++            std::thread::sleep(Duration::from_secs(30));
++        });
++        format!("http://{address}/")
++    }
++
++    fn download(base: &str, dir: &Path, cancel: &AtomicBool) -> (Result<Option<ModelPaths>, String>, Duration) {
++        let started = Instant::now();
++        let result = tauri::async_runtime::block_on(fetch(base, Model::Parakeet.files(), dir, cancel, &mut |_| {}));
++        (result, started.elapsed())
++    }
++
++    fn leftovers(dir: &Path) -> Vec<String> {
++        fs::read_dir(dir)
++            .map(|entries| entries.flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect())
++            .unwrap_or_default()
++    }
++
++    #[test]
++    fn pause_stops_a_stalled_download() {
++        for start_reply in [false, true] {
++            let dir = std::env::temp_dir().join(format!("hoshi-model-pause-{start_reply}-{}", std::process::id()));
++            let cancel = Arc::new(AtomicBool::new(false));
++            let flag = cancel.clone();
++            std::thread::spawn(move || {
++                std::thread::sleep(Duration::from_millis(300));
++                flag.store(true, Ordering::Relaxed);
++            });
++            let (result, elapsed) = download(&stalled_server(start_reply), &dir, &cancel);
++            assert!(matches!(result, Ok(None)), "paused download returns Ok(None), got {:?}", result.err());
++            assert!(elapsed < Duration::from_millis(1500), "pause took {elapsed:?}");
++            assert!(!leftovers(&dir).iter().any(|name| name.ends_with(".part")), "{:?}", leftovers(&dir));
++            fs::remove_dir_all(&dir).ok();
++        }
++    }
++
++    #[test]
++    fn a_stalled_download_ends_with_an_error() {
++        for start_reply in [false, true] {
++            let dir = std::env::temp_dir().join(format!("hoshi-model-stall-{start_reply}-{}", std::process::id()));
++            let cancel = AtomicBool::new(false);
++            let (result, elapsed) = download(&stalled_server(start_reply), &dir, &cancel);
++            let error = result.err().expect("a stalled download fails");
++            assert!(error.contains("stalled"), "{error}");
++            assert!(elapsed < READ_TIMEOUT + Duration::from_secs(2), "timeout took {elapsed:?}");
++            assert!(!leftovers(&dir).iter().any(|name| name.ends_with(".part")), "{:?}", leftovers(&dir));
++            fs::remove_dir_all(&dir).ok();
++        }
++    }
  }
 diff --git a/src-tauri/src/transcription/pipeline.rs b/src-tauri/src/transcription/pipeline.rs
 index d23b823..76c34ef 100644
