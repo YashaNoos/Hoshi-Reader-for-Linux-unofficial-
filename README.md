@@ -15,7 +15,7 @@ patches that make it build and run on Linux, plus the packaging to install it.
 | | |
 |---|---|
 | **Based on upstream** | v1.2.0 |
-| **Linux build revision** | 1.2.0-3 |
+| **Linux build revision** | 1.2.0-4 |
 | **Platform** | Linux x86_64 |
 | **Tested on** | Arch Linux, KDE Plasma (Wayland): package and AppImage<br>Ubuntu 26.04.1, GNOME: AppImage |
 | **License** | GPL-3.0-or-later, same as upstream |
@@ -113,6 +113,10 @@ Please read these before installing.
 - **Tested on few setups:** Arch Linux with KDE Plasma on Wayland (package and
   AppImage) and Ubuntu 26.04.1 with GNOME (AppImage). Other desktops, X11 and other
   distributions are unverified.
+- **Controller support** was tested with a simulated controller only. It reads
+  controllers directly (evdev, through gilrs), which needs read access to
+  `/dev/input/event*`; desktop distributions give that to the logged-in user for
+  game controllers. Controllers only act while the Hoshi window has focus.
 - **x86_64 only.**
 - **No in-app updates.** The updater is disabled on Linux; update through your package
   manager, or download the new AppImage from the Releases page.
@@ -157,6 +161,8 @@ Each patch in [`arch/`](arch) is one self-contained change:
 | `0019-sasayaki-parakeet-ja` | Transcription can use NVIDIA's parakeet-tdt_ctc-0.6b-ja model (the default) or ReazonSpeech k2 (Match → Transcription → Model). Parakeet hears names and clauses after pauses that ReazonSpeech dropped, and writes words in kanji like the book (明日, not あした), so far more of the text matches. The audio is given to it in pieces of 15–30 s, since it uses the context; ReazonSpeech keeps the cutting of the other platforms. A saved transcription remembers its model: switching model transcribes the audio again. |
 | `0020-sasayaki-aligner-unlikely-matches` | Sasayaki matching: a lone kana that matches between differences is ignored when it cannot belong there. Example: the transcript writes あした for the book's 明日, and its あ was matched to the book's next あ (「あ、明日？」), giving that cue the wrong audio. Not in upstream. |
 | `0021-linux-wheel-whole-pixels` | Text no longer turns blurry on every other mouse-wheel click ([#3](../../issues/3)). On KDE a click reaches WebKitGTK as 1.5 steps, which it multiplies by a step size taken from the window height; at about half of all window heights that gave half-pixel distances (e.g. 139.5 px), so every other click left the text between screen pixels. Each click is now rounded to whole pixels (140, 139, 140, … px), with the same total distance. `HOSHI_WHEEL_SNAP=0` turns it off. |
+| `0022-linux-controller-support` | Game controller support (Settings → Input → Controller). The D-pad or left stick turns pages; buttons play, pause and repeat Sasayaki cues. A text cursor (top button) moves through the text by character, line and word, starts on the cue being read, opens the dictionary popup where it stands and turns the page at the edge. In the popup, buttons pick an entry, mine it or play its audio, and the right stick scrolls. The text cursor pauses Sasayaki while it is on. Every button can be remapped, buttons can be named Xbox, Nintendo or PlayStation style, and previous/next cue and word can be swapped in vertical text. Controllers are read in the backend with gilrs, because WebKitGTK's Gamepad API does not reach Hoshi's window; they only act while the window has focus. Not in upstream. |
+| `0023-popup-fit-window` | In vertical text, the dictionary popup is never taller than the window. With a popup height setting larger than the reading area, it hung past the bottom of the window and the end of its list could not be reached. Not in upstream. |
 
 The compiler flags in the PKGBUILD work around newer GCC versions (15/16) breaking
 upstream's C++ dictionary engine because of missing standard `#include`s.
@@ -192,6 +198,8 @@ Components added by the Linux build:
 | **sherpa-onnx** (k2-fsa) | Speech recognition runtime (Rust crate `sherpa-onnx` 1.13.8 and the prebuilt static library for the same version, linked into the binary). | Apache-2.0 | https://github.com/k2-fsa/sherpa-onnx |
 | **ONNX Runtime** (Microsoft) | Inference engine contained in the sherpa-onnx static library. | MIT | https://github.com/microsoft/onnxruntime |
 | **Symphonia** | Audio decoding (mp3, AAC/m4b/m4a, ALAC, FLAC, Ogg Vorbis, WAV) for transcription and duration reading. | MPL-2.0 | https://github.com/pdeljanov/Symphonia |
+| **gilrs** | Game controller input on Linux (reads controllers from evdev; patch 0022). | Apache-2.0 OR MIT | https://gitlab.com/gilrs-project/gilrs |
+| **SDL_GameControllerDB** | Controller button mappings, included in gilrs. | Zlib | https://github.com/mdqinc/SDL_GameControllerDB |
 | **arboard** | Clipboard access on Wayland and X11. | MIT OR Apache-2.0 | https://github.com/1Password/arboard |
 | **zbus-secret-service-keyring-store** | Stores Google Drive sign-in tokens in the desktop Secret Service (KWallet, GNOME Keyring). | MIT OR Apache-2.0 | https://github.com/open-source-cooperative/zbus-secret-service-keyring-store |
 | **gtk-rs (gtk3-rs)** | Positioning context menus relative to the app window on Wayland; rounding mouse-wheel scrolling to whole pixels. | MIT | https://github.com/gtk-rs/gtk3-rs |

@@ -3,7 +3,7 @@
 # Maintainer: YashaNoos (https://github.com/YashaNoos)
 pkgname=hoshi-reader-linux
 pkgver=1.2.0
-pkgrel=3
+pkgrel=4
 pkgdesc='Japanese EPUB reader with pop-up dictionary and Anki mining (unofficial Linux build)'
 arch=('x86_64')
 url='https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-'
@@ -14,7 +14,7 @@ license=('GPL-3.0-or-later' 'Apache-2.0' 'MIT')
 # these decoders <audio> cannot play mp3/m4b/m4a (Sasayaki audiobooks).
 # noto-fonts-cjk: the reader's Japanese fonts on Linux (Noto Serif/Sans CJK JP); without a
 # Japanese font, fontconfig falls back to a Chinese one.
-depends=('webkit2gtk-4.1' 'gtk3' 'libsoup3' 'openssl' 'gst-plugins-good' 'gst-libav' 'noto-fonts-cjk')
+depends=('webkit2gtk-4.1' 'gtk3' 'libsoup3' 'openssl' 'gst-plugins-good' 'gst-libav' 'noto-fonts-cjk' 'systemd-libs')
 makedepends=('git' 'rust' 'nodejs' 'pnpm' 'cmake' 'gcc' 'pkgconf')
 optdepends=('xdg-desktop-portal-kde: KDE file dialog for importing books/subtitles/audio (any xdg-desktop-portal backend works)'
             'kwallet: Secret Service provider, needed for Google Drive sync login'
@@ -44,6 +44,8 @@ source=("$pkgname::git+$_upstream_url.git#tag=v$pkgver"
         '0019-sasayaki-parakeet-ja.patch'
         '0020-sasayaki-aligner-unlikely-matches.patch'
         '0021-linux-wheel-whole-pixels.patch'
+        '0022-linux-controller-support.patch'
+        '0023-popup-fit-window.patch'
         # prebuilt static library for Sasayaki transcription; the Rust crate links it
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2")
 noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
@@ -70,6 +72,8 @@ sha256sums=('SKIP'
             '3a2dec0787e7dbf25b42f745684b5585bc6d636a98a718a9284750fe036cc925'
             '116509f4e2cb96afdaa3704969db13035fd0cefcc704aa7d1bb3ca2f2db04a21'
             '3b330278f850f029ecb2262f70fb0e00024396b6dadb13bff425f922ae677456'
+            '5ded3de50f67c0fd923e2cd1c1f03008c269163393a40240c62a5af2717611af'
+            'e0952e87c55a189699704f35b9de6d41705eebb99d5df15b0a3dba11bf885cee'
             'e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6')
 
 prepare() {

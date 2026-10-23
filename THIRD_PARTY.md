@@ -16,6 +16,8 @@ as well.
 | **sherpa-onnx** (k2-fsa) | Speech recognition runtime (Rust crate `sherpa-onnx` 1.13.8 and the prebuilt static library for the same version, linked into the binary). | Apache-2.0 | https://github.com/k2-fsa/sherpa-onnx |
 | **ONNX Runtime** (Microsoft) | Inference engine contained in the sherpa-onnx static library. | MIT | https://github.com/microsoft/onnxruntime |
 | **Symphonia** | Audio decoding (mp3, AAC/m4b/m4a, ALAC, FLAC, Ogg Vorbis, WAV) for transcription and duration reading. | MPL-2.0 | https://github.com/pdeljanov/Symphonia |
+| **gilrs** | Game controller input on Linux (reads controllers from evdev; patch 0022). | Apache-2.0 OR MIT | https://gitlab.com/gilrs-project/gilrs |
+| **SDL_GameControllerDB** | Controller button mappings, included in gilrs. | Zlib | https://github.com/mdqinc/SDL_GameControllerDB |
 | **arboard** | Clipboard access on Wayland and X11. | MIT OR Apache-2.0 | https://github.com/1Password/arboard |
 | **zbus-secret-service-keyring-store** | Stores Google Drive sign-in tokens in the desktop Secret Service (KWallet, GNOME Keyring). | MIT OR Apache-2.0 | https://github.com/open-source-cooperative/zbus-secret-service-keyring-store |
 | **gtk-rs (gtk3-rs)** | Positioning context menus relative to the app window on Wayland; rounding mouse-wheel scrolling to whole pixels. | MIT | https://github.com/gtk-rs/gtk3-rs |

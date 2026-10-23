@@ -1,0 +1,1603 @@
+diff --git a/public/popup/popup.css b/public/popup/popup.css
+index 75cc484..b55a513 100644
+--- a/public/popup/popup.css
++++ b/public/popup/popup.css
+@@ -40,6 +40,11 @@ body {
+     padding: calc(4px * var(--popup-scale)) 0 calc(5px * var(--popup-scale));
+ }
+ 
++.entry.controller-selected {
++    box-shadow: inset 3px 0 0 var(--accent-color, #f59e0b);
++    padding-left: calc(8px * var(--popup-scale));
++}
++
+ .entry-header {
+     display: flow-root;
+     padding-top: calc(6px * var(--popup-scale));
+diff --git a/public/popup/popup.html b/public/popup/popup.html
+index 91d6014..cf621bd 100644
+--- a/public/popup/popup.html
++++ b/public/popup/popup.html
+@@ -515,6 +515,8 @@
+           playEntryAudio(m.entryIndex, m.sourceIndex);
+         } else if (m?.hoshi === "entry-action") {
+           runEntryAction(m.action, m.slotIndex);
++        } else if (m?.hoshi === "controller") {
++          runControllerAction(m.op, m.value);
+         } else if (m?.hoshi === "highlight") {
+           window.hoshiSelection?.highlightSelection(m.count);
+         } else if (m?.hoshi === "clear-selection") {
+diff --git a/public/popup/popup.js b/public/popup/popup.js
+index dce50ea..ae40686 100644
+--- a/public/popup/popup.js
++++ b/public/popup/popup.js
+@@ -1640,9 +1640,31 @@ async function mineEntryAtIndex(entryIndex, slotIndex) {
+ 
+ let hoveredEntry = null;
+ document.addEventListener('mouseover', e => {
+-    hoveredEntry = e.target.closest?.('.entry') ?? hoveredEntry;
++    const entry = e.target.closest?.('.entry');
++    if (entry && entry !== hoveredEntry) { document.querySelector('.entry.controller-selected')?.classList.remove('controller-selected'); }
++    hoveredEntry = entry ?? hoveredEntry;
+ });
+ 
++// Linux build (0022): a controller picks the entry that mining and audio act on.
++let controllerScroll = 0;
++function runControllerAction(op, value) {
++    if (op === 'scroll') {
++        // Small tilts give fractions of a pixel per frame: add them up so they still scroll.
++        controllerScroll += value;
++        const step = Math.trunc(controllerScroll);
++        controllerScroll -= step;
++        if (step) { (document.getElementById('entries-container') || document.scrollingElement).scrollBy(0, step); }
++        return;
++    }
++    const entries = [...document.querySelectorAll('.entry')];
++    if (!entries.length) { return; }
++    const index = hoveredEntry?.isConnected ? entries.indexOf(hoveredEntry) : 0;
++    const next = entries[Math.max(0, Math.min(entries.length - 1, index + value))];
++    entries.forEach(entry => entry.classList.toggle('controller-selected', entry === next));
++    hoveredEntry = next;
++    next.scrollIntoView({ block: next.offsetHeight > window.innerHeight ? 'start' : 'nearest' });
++}
++
+ function runEntryAction(action, slotIndex) {
+     const entryIndex = hoveredEntry?.isConnected ? Number(hoveredEntry.dataset.entryIndex) : 0;
+     if (action === 'audio') { playEntryAudio(entryIndex); return; }
+diff --git a/src-tauri/Cargo.lock b/src-tauri/Cargo.lock
+index e311b1b..1c0a92d 100644
+--- a/src-tauri/Cargo.lock
++++ b/src-tauri/Cargo.lock
+@@ -643,6 +643,12 @@ version = "1.0.5"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
+ 
++[[package]]
++name = "cfg_aliases"
++version = "0.2.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
++
+ [[package]]
+ name = "chrono"
+ version = "0.4.45"
+@@ -1683,6 +1689,40 @@ dependencies = [
+  "r-efi 6.0.0",
+ ]
+ 
++[[package]]
++name = "gilrs"
++version = "0.11.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "902fb00d3f6398e635be22e5c837b303c501835cca7ac11a47bba138f7aafdd8"
++dependencies = [
++ "fnv",
++ "gilrs-core",
++ "log",
++ "uuid",
++ "vec_map",
++]
++
++[[package]]
++name = "gilrs-core"
++version = "0.6.8"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "dc7f0ce6237abcc0523f2a5502b1e3fe5802daaae47ac14e166fe49551301ea9"
++dependencies = [
++ "inotify",
++ "js-sys",
++ "libc",
++ "libudev-sys",
++ "log",
++ "nix",
++ "objc2-core-foundation",
++ "objc2-io-kit",
++ "uuid",
++ "vec_map",
++ "wasm-bindgen",
++ "web-sys",
++ "windows 0.62.2",
++]
++
+ [[package]]
+ name = "gio"
+ version = "0.18.4"
+@@ -1932,6 +1972,7 @@ dependencies = [
+  "arboard",
+  "base64 0.23.1",
+  "chrono",
++ "gilrs",
+  "gtk",
+  "hoshidicts",
+  "image",
+@@ -2293,6 +2334,26 @@ dependencies = [
+  "cfb 0.14.0",
+ ]
+ 
++[[package]]
++name = "inotify"
++version = "0.11.5"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "4cc00ea907cab49550b7da656f80ebb97be1b997d931fbcd28d39734e17ce592"
++dependencies = [
++ "bitflags 2.13.2",
++ "inotify-sys",
++ "libc",
++]
++
++[[package]]
++name = "inotify-sys"
++version = "0.1.8"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c033f80b2c113cdf91ab7a33faa9cbc014726dcad99880c8609af2a370edf37d"
++dependencies = [
++ "libc",
++]
++
+ [[package]]
+ name = "inout"
+ version = "0.1.4"
+@@ -2611,6 +2672,16 @@ dependencies = [
+  "vcpkg",
+ ]
+ 
++[[package]]
++name = "libudev-sys"
++version = "0.1.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "3c8469b4a23b962c1396b9b451dda50ef5b283e8dd309d69033475fa9b334324"
++dependencies = [
++ "libc",
++ "pkg-config",
++]
++
+ [[package]]
+ name = "linux-raw-sys"
+ version = "0.12.1"
+@@ -2838,6 +2909,18 @@ version = "1.0.6"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
+ 
++[[package]]
++name = "nix"
++version = "0.31.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "cf20d2fde8ff38632c426f1165ed7436270b44f199fc55284c38276f9db47c3d"
++dependencies = [
++ "bitflags 2.13.2",
++ "cfg-if",
++ "cfg_aliases",
++ "libc",
++]
++
+ [[package]]
+ name = "nom"
+ version = "8.0.0"
+@@ -3077,6 +3160,17 @@ dependencies = [
+  "objc2-core-foundation",
+ ]
+ 
++[[package]]
++name = "objc2-io-kit"
++version = "0.3.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "33fafba39597d6dc1fb709123dfa8289d39406734be322956a69f0931c73bb15"
++dependencies = [
++ "bitflags 2.13.2",
++ "libc",
++ "objc2-core-foundation",
++]
++
+ [[package]]
+ name = "objc2-io-surface"
+ version = "0.3.2"
+@@ -5635,6 +5729,12 @@ version = "0.2.15"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
+ 
++[[package]]
++name = "vec_map"
++version = "0.8.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
++
+ [[package]]
+ name = "version-compare"
+ version = "0.2.1"
+diff --git a/src-tauri/Cargo.toml b/src-tauri/Cargo.toml
+index d26c627..a6c397e 100644
+--- a/src-tauri/Cargo.toml
++++ b/src-tauri/Cargo.toml
+@@ -57,6 +57,8 @@ zbus-secret-service-keyring-store = { version = "1", features = ["rt-async-io-cr
+ arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"] }
+ # Wayland: anchor context menus to our own window (see context_menu.rs)
+ gtk = "0.18"
++# Game controllers (see controller.rs): read from evdev, not through WebKitGTK
++gilrs = "0.11"
+ symphonia = { version = "0.5", default-features = false, features = ["aac", "alac", "flac", "isomp4", "mkv", "mp3", "ogg", "pcm", "vorbis", "wav"] }
+ 
+ [target.'cfg(windows)'.dependencies]
+diff --git a/src-tauri/src/book.rs b/src-tauri/src/book.rs
+index 6128b93..918f83f 100644
+--- a/src-tauri/src/book.rs
++++ b/src-tauri/src/book.rs
+@@ -171,6 +171,7 @@ pub fn book_protocol(app: &AppHandle, request: Request<Vec<u8>>) -> Response<Vec
+             "selection.js" => include_str!("../../src/reader/selection.js"),
+             "paragraph.js" => include_str!("../../src/reader/paragraph.js"),
+             "input.js" => include_str!("../../src/reader/input.js"),
++            "cursor.js" => include_str!("../../src/reader/cursor.js"),
+             "boot.js" => include_str!("../../src/reader/boot.js"),
+             "scrollreader.js" => include_str!("../../src/reader/scrollreader.js"),
+             "scrollboot.js" => include_str!("../../src/reader/scrollboot.js"),
+@@ -258,6 +259,7 @@ fn inject_scripts(bytes: Vec<u8>) -> Vec<u8> {
+         r#"<script src="/__hoshi/highlights.js"></script>"#,
+         r#"<script src="/__hoshi/paragraph.js"></script>"#,
+         r#"<script src="/__hoshi/input.js"></script>"#,
++        r#"<script src="/__hoshi/cursor.js"></script>"#,
+         r#"<script src="/__hoshi/boot.js"></script>"#,
+     );
+     let mut html = String::from_utf8_lossy(&bytes).into_owned();
+@@ -291,6 +293,7 @@ fn continuous_shell(app: &AppHandle, id: &str) -> Option<Vec<u8>> {
+         r#"<script src="/__hoshi/selection.js"></script>"#,
+         r#"<script src="/__hoshi/highlights.js"></script>"#,
+         r#"<script src="/__hoshi/input.js"></script>"#,
++        r#"<script src="/__hoshi/cursor.js"></script>"#,
+         r#"<script src="/__hoshi/scrollboot.js"></script>"#,
+     );
+     let epub = Epub::open(library::book_epub_path(app, id)?).ok()?;
+diff --git a/src-tauri/src/controller.rs b/src-tauri/src/controller.rs
+new file mode 100644
+index 0000000..34900d3
+--- /dev/null
++++ b/src-tauri/src/controller.rs
+@@ -0,0 +1,119 @@
++//! Linux build (0022): game controllers read with gilrs (evdev), on a thread of their own.
++//!
++//! WebKitGTK's Gamepad API only feeds a web view it considers focused, which does not
++//! happen in Hoshi's window, and its controller library froze the app when a controller
++//! reconnected. So the Linux build reads controllers here and sends their state to the
++//! window ("controller-state") in the W3C standard layout; the frontend keeps the logic.
++
++use std::sync::{Mutex, OnceLock};
++use std::time::{Duration, Instant};
++
++use gilrs::{Axis, Button, Gamepad, GamepadId, Gilrs};
++use serde::Serialize;
++use tauri::{AppHandle, Emitter};
++
++/// Standard-layout order (Gamepad API button indices 0..=16).
++const BUTTONS: [Button; 17] = [
++    Button::South,
++    Button::East,
++    Button::West,
++    Button::North,
++    Button::LeftTrigger,
++    Button::RightTrigger,
++    Button::LeftTrigger2,
++    Button::RightTrigger2,
++    Button::Select,
++    Button::Start,
++    Button::LeftThumb,
++    Button::RightThumb,
++    Button::DPadUp,
++    Button::DPadDown,
++    Button::DPadLeft,
++    Button::DPadRight,
++    Button::Mode,
++];
++
++/// At most this often (stick movements send hundreds of events a second).
++const MIN_INTERVAL: Duration = Duration::from_millis(8);
++
++#[derive(Serialize, Clone, Default, PartialEq)]
++pub struct ControllerState {
++    name: Option<String>,
++    buttons: Vec<f32>,
++    /// Left X, left Y, right X, right Y; Y is positive downwards, as in the Gamepad API.
++    axes: Vec<f32>,
++}
++
++static STATE: Mutex<Option<ControllerState>> = Mutex::new(None);
++static STARTED: OnceLock<()> = OnceLock::new();
++
++fn snapshot(gamepad: &Gamepad) -> ControllerState {
++    let button = |button: Button| gamepad.button_data(button).map_or(0.0, |data| data.value());
++    ControllerState {
++        name: Some(gamepad.name().to_string()),
++        buttons: BUTTONS.iter().map(|&b| button(b)).collect(),
++        axes: vec![
++            gamepad.value(Axis::LeftStickX),
++            -gamepad.value(Axis::LeftStickY),
++            gamepad.value(Axis::RightStickX),
++            -gamepad.value(Axis::RightStickY),
++        ],
++    }
++}
++
++/// The controller in use: the one already chosen while it stays connected, else the first.
++fn choose(gilrs: &Gilrs, active: Option<GamepadId>) -> Option<GamepadId> {
++    active
++        .filter(|&id| gilrs.connected_gamepad(id).is_some())
++        .or_else(|| gilrs.gamepads().find(|(_, gamepad)| gamepad.is_connected()).map(|(id, _)| id))
++}
++
++fn publish(app: &AppHandle, gilrs: &Gilrs, active: Option<GamepadId>) -> ControllerState {
++    let state = active.map_or_else(ControllerState::default, |id| snapshot(&gilrs.gamepad(id)));
++    *STATE.lock().unwrap() = Some(state.clone());
++    app.emit("controller-state", &state).ok();
++    state
++}
++
++fn run(app: AppHandle) {
++    let mut gilrs = match Gilrs::new() {
++        Ok(gilrs) => gilrs,
++        Err(gilrs::Error::NotImplemented(gilrs)) => gilrs,
++        Err(error) => {
++            eprintln!("controller: {error}");
++            return;
++        }
++    };
++    let mut active = choose(&gilrs, None);
++    let mut sent = publish(&app, &gilrs, active);
++    let mut last_emit = Instant::now();
++    loop {
++        // gilrs updates a controller's state as its events are taken from the queue.
++        if gilrs.next_event_blocking(Some(Duration::from_secs(1))).is_none() {
++            continue;
++        }
++        let wait = MIN_INTERVAL.saturating_sub(last_emit.elapsed());
++        if !wait.is_zero() {
++            std::thread::sleep(wait);
++        }
++        while gilrs.next_event().is_some() {}
++        active = choose(&gilrs, active);
++        let state = active.map_or_else(ControllerState::default, |id| snapshot(&gilrs.gamepad(id)));
++        if state != sent {
++            sent = publish(&app, &gilrs, active);
++            last_emit = Instant::now();
++        }
++    }
++}
++
++/// Starts reading controllers (once) and returns the current state.
++#[tauri::command]
++pub fn controller_state(app: AppHandle) -> ControllerState {
++    STARTED.get_or_init(|| {
++        std::thread::Builder::new()
++            .name("controller".into())
++            .spawn(move || run(app))
++            .ok();
++    });
++    STATE.lock().unwrap().clone().unwrap_or_default()
++}
+diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
+index 77d386a..2eae417 100644
+--- a/src-tauri/src/lib.rs
++++ b/src-tauri/src/lib.rs
+@@ -9,6 +9,8 @@ mod book;
+ mod clipboard;
+ #[cfg(target_os = "linux")]
+ mod context_menu;
++#[cfg(target_os = "linux")]
++mod controller;
+ mod crash;
+ mod css;
+ mod dict;
+@@ -159,6 +161,8 @@ pub fn run() {
+             context_menu::popup_menu_at_pointer,
+             #[cfg(target_os = "linux")]
+             appimage_theme::desktop_color_scheme,
++            #[cfg(target_os = "linux")]
++            controller::controller_state,
+             #[cfg(windows)]
+             media_controls::media_controls_metadata,
+             #[cfg(windows)]
+diff --git a/src/App.svelte b/src/App.svelte
+index d69ffe8..dc8c66f 100644
+--- a/src/App.svelte
++++ b/src/App.svelte
+@@ -16,6 +16,7 @@
+   import { readerConfig } from "./lib/readerConfig.svelte";
+   import type { BookHighlight } from "./lib/highlights";
+   import Settings, { settingsTabs, type SettingsTab } from "./lib/Settings.svelte";
++  import ControllerValues from "./lib/ControllerValues.svelte";
+   import SourceList from "./lib/SourceList.svelte";
+   import ChangelogDialog from "./lib/ChangelogDialog.svelte";
+   import UpdateDialog from "./lib/UpdateDialog.svelte";
+@@ -368,3 +369,4 @@
+ 
+ <ChangelogDialog />
+ <UpdateDialog />
++<ControllerValues />
+diff --git a/src/lib/ControllerSettings.svelte b/src/lib/ControllerSettings.svelte
+new file mode 100644
+index 0000000..e5b941e
+--- /dev/null
++++ b/src/lib/ControllerSettings.svelte
+@@ -0,0 +1,149 @@
++<script lang="ts">
++  // Linux build (0022): controller settings, at the end of Settings → Input.
++  import SettingsSection from "./SettingsSection.svelte";
++  import SettingRow from "./SettingRow.svelte";
++  import SettingToggle from "./SettingToggle.svelte";
++  import Toast from "./Toast.svelte";
++  import { isLinux } from "./platform";
++  import {
++    captureControllerButton,
++    controllerActions,
++    controllerButtonLabel,
++    controllerButtonPosition,
++    controllerConfig,
++    controllerLabelStyles,
++    controllerStatus,
++    resetControllerBindings,
++    saveControllerConfig,
++    useControllerHandler,
++    type ControllerAction,
++    type ControllerSection,
++  } from "./controller.svelte";
++
++  const sections: ControllerSection[] = ["Reading", "Text Cursor", "Popup"];
++
++  let binding = $state<ControllerAction | null>(null);
++  let toast = $state<Toast>();
++  let cancelCapture: (() => void) | null = null;
++
++  // Polls while Settings is open, so the connected controller's name shows; buttons
++  // pressed here do nothing in a reader underneath.
++  $effect(() => {
++    const release = useControllerHandler(() => {});
++    return () => {
++      cancelCapture?.();
++      release();
++    };
++  });
++
++  async function bind(key: ControllerAction) {
++    cancelCapture?.();
++    binding = key;
++    const capture = captureControllerButton();
++    cancelCapture = capture.cancel;
++    const button = await capture.promise;
++    if (binding !== key) return;
++    binding = null;
++    cancelCapture = null;
++    if (button < 0) return;
++    const action = controllerActions.find((entry) => entry.key === key)!;
++    const conflict = controllerActions.find(
++      (entry) => entry.key !== key && entry.section === action.section && controllerConfig[entry.key] === button,
++    );
++    if (conflict) {
++      toast?.show(
++        `${controllerButtonLabel(button)} is already used by ${conflict.label} (${conflict.section}).\nClear it there first, or choose another button.`,
++        "error",
++      );
++      return;
++    }
++    if (button >= 12 && button <= 15) {
++      toast?.show("The D-pad turns pages and moves the text cursor: it cannot be assigned.", "error");
++      return;
++    }
++    controllerConfig[key] = button;
++    saveControllerConfig();
++  }
++
++  function clear(key: ControllerAction) {
++    cancelCapture?.();
++    binding = null;
++    controllerConfig[key] = -1;
++    saveControllerConfig();
++  }
++</script>
++
++<SettingsSection title="Controller">
++  <SettingToggle label="Use Controller" bind:checked={controllerConfig.controllerEnabled} onchange={saveControllerConfig} />
++  <p class="text-xs text-base-content/60">
++    {controllerStatus.name
++      ? `Connected: ${controllerStatus.name}`
++      : isLinux
++        ? "No controller connected."
++        : "No controller seen yet: press a button on it."}
++  </p>
++  <p class="text-xs text-base-content/60">
++    D-pad or left stick: turn pages, or move the text cursor. Right stick: scroll the popup. Buttons act on the open
++    popup first, then on the text cursor, then on reading.
++  </p>
++  <SettingRow label="Button Names">
++    <select class="select select-sm w-48" bind:value={controllerConfig.controllerLabels} onchange={saveControllerConfig}>
++      {#each controllerLabelStyles as style (style.value)}
++        <option value={style.value}>{style.label}</option>
++      {/each}
++    </select>
++  </SettingRow>
++  <p class="text-xs text-base-content/60">
++    Choose the letters printed on your controller. The buttons work by position, so with "Nintendo" the bottom button
++    is B.
++  </p>
++  <SettingToggle
++    label="Swap Previous / Next in Vertical Text"
++    bind:checked={controllerConfig.controllerSwapVertical}
++    onchange={saveControllerConfig}
++  />
++  <p class="text-xs text-base-content/60">
++    For cues and words: in vertical text the left button goes forward, like the pages.
++  </p>
++  <SettingToggle
++    label="Show Input Values"
++    bind:checked={controllerConfig.controllerShowValues}
++    onchange={saveControllerConfig}
++  />
++  <p class="text-xs text-base-content/60">
++    For troubleshooting: shows the stick values, how often the controller is read, and where the right stick scrolls
++    the popup, in a corner of the window.
++  </p>
++</SettingsSection>
++
++{#each sections as section (section)}
++  <SettingsSection title="Controller: {section}">
++    {#each controllerActions.filter((action) => action.section === section) as action (action.key)}
++      <SettingRow label={action.label}>
++        <div class="join">
++          <button
++            class="btn join-item btn-sm min-w-28 {binding === action.key ? 'btn-active' : ''}"
++            title={controllerButtonPosition(controllerConfig[action.key])}
++            onclick={() => bind(action.key)}
++          >
++            {binding === action.key ? "Press a button…" : controllerButtonLabel(controllerConfig[action.key])}
++          </button>
++          <button
++            class="btn join-item btn-sm"
++            aria-label="Clear"
++            title="Clear"
++            disabled={controllerConfig[action.key] < 0}
++            onclick={() => clear(action.key)}
++          >
++            ×
++          </button>
++        </div>
++      </SettingRow>
++    {/each}
++  </SettingsSection>
++{/each}
++
++<Toast bind:this={toast} />
++<div class="flex justify-end">
++  <button class="btn btn-ghost btn-sm" onclick={resetControllerBindings}>Reset Controller Buttons</button>
++</div>
+diff --git a/src/lib/ControllerValues.svelte b/src/lib/ControllerValues.svelte
+new file mode 100644
+index 0000000..9b3bfa5
+--- /dev/null
++++ b/src/lib/ControllerValues.svelte
+@@ -0,0 +1,20 @@
++<script lang="ts">
++  // Linux build (0022): "Show Input Values" readout, for troubleshooting a controller.
++  import { controllerButtonLabel, controllerConfig, controllerDebug, controllerStatus } from "./controller.svelte";
++
++  const axis = (value: number | undefined) => (value ?? 0).toFixed(2);
++
++  const text = $derived(
++    [
++      `${controllerStatus.name ?? "no controller"} · ${controllerDebug.rate} reads/s · window ${controllerDebug.focused ? "focused" : "not focused"}`,
++      `left ${axis(controllerDebug.axes[0])} ${axis(controllerDebug.axes[1])} · right ${axis(controllerDebug.axes[2])} ${axis(controllerDebug.axes[3])} · buttons ${controllerDebug.buttons.map(controllerButtonLabel).join(" ") || "–"}`,
++      ...(controllerDebug.scroll ? [`scroll: ${controllerDebug.scroll}`] : []),
++    ].join("\n"),
++  );
++</script>
++
++{#if controllerConfig.controllerShowValues}
++  <div
++    class="pointer-events-none fixed bottom-2 left-2 z-[9999] max-w-[calc(100vw-1rem)] rounded-md bg-black/75 px-2 py-1 font-mono text-[11px] leading-snug whitespace-pre-wrap text-white"
++  >{text}</div>
++{/if}
+diff --git a/src/lib/Popup.svelte b/src/lib/Popup.svelte
+index a773bcc..b7770e8 100644
+--- a/src/lib/Popup.svelte
++++ b/src/lib/Popup.svelte
+@@ -103,6 +103,24 @@
+     send({ hoshi: "entry-action", action, slotIndex });
+   }
+ 
++  // Linux build (0022): controller selects entries and scrolls the popup.
++  export function controllerAction(op: "entry" | "scroll", value: number) {
++    send({ hoshi: "controller", op, value });
++  }
++
++  /** For the controller readout: the entry list's position. */
++  export function scrollInfo(): string {
++    const list = iframeEl?.contentDocument?.getElementById("entries-container");
++    return list ? `${Math.round(list.scrollTop)}/${list.scrollHeight - list.clientHeight}` : "no list";
++  }
++
++  /** Whether the entry list can still scroll that way (the popup page is same-origin). */
++  export function canScroll(delta: number): boolean {
++    const list = iframeEl?.contentDocument?.getElementById("entries-container");
++    if (!list) return false;
++    return delta > 0 ? list.scrollTop + list.clientHeight < list.scrollHeight - 1 : list.scrollTop > 0;
++  }
++
+   function popupConfig() {
+     return {
+       scale,
+diff --git a/src/lib/Reader.svelte b/src/lib/Reader.svelte
+index 19fbce4..97f28fb 100644
+--- a/src/lib/Reader.svelte
++++ b/src/lib/Reader.svelte
+@@ -58,6 +58,13 @@
+   import MatchDialog from "./MatchDialog.svelte";
+   import { dictConfig } from "./dictConfig.svelte";
+   import { hotkeyConfig, normalizeHotkey, readerHotkeys } from "./hotkeyConfig.svelte";
++  import {
++    controllerAction,
++    controllerConfig,
++    controllerDebug,
++    useControllerHandler,
++    type ControllerEvent,
++  } from "./controller.svelte";
+   import { statsConfig } from "./statsConfig.svelte";
+   import { syncConfig } from "./syncConfig.svelte";
+   import { StatsTracker } from "./statsTracker.svelte";
+@@ -519,10 +526,13 @@
+     sentence: string = "",
+     offset: number | null = null,
+     chapterIndex: number = index,
++    closeOnMiss = false,
+   ) {
+     hider.cancel();
+     const seq = ++lookupSeq;
+     const response = await lookup(text);
++    // Linux build (0022): with the text cursor, a popup for another word would be misleading.
++    if (closeOnMiss && seq === lookupSeq && !response.entries.length) closePopups();
+     if (seq !== lookupSeq || !response.entries.length) return;
+     popupAnki = await invoke<PopupAnkiConfig>("anki_config");
+     if (seq !== lookupSeq) return;
+@@ -1309,6 +1319,111 @@
+     else if (key === hotkeyConfig.playEntryAudio) popupViews[popups.length - 1]?.entryAction("audio");
+   }
+ 
++  // Linux build (0022): game controller. Buttons act on the open popup first, then on the
++  // text cursor, then on reading (see controller.svelte.ts).
++  let cursorActive = $state(false);
++  let cursorEdge: "forward" | "backward" | null = null;
++  // The cursor pauses Sasayaki while it is on, and resumes it if it was playing.
++  let cursorPausedPlayback = false;
++
++  function setCursor(active: boolean) {
++    if (active === cursorActive) return;
++    cursorActive = active;
++    postToFrame({ hoshi: "cursor", op: active ? "start" : "stop" });
++    if (active) {
++      cursorPausedPlayback = !!sasayaki?.isPlaying;
++      if (cursorPausedPlayback) sasayaki?.togglePlayback();
++    } else {
++      closePopups();
++      if (cursorPausedPlayback && sasayaki && !sasayaki.isPlaying && !popups.length) sasayaki.togglePlayback();
++      cursorPausedPlayback = false;
++    }
++  }
++
++  function onController(event: ControllerEvent) {
++    if (loading || document.querySelector("dialog[open]")) return;
++    const popup = popupViews[popups.length - 1];
++    const follow = popups.length > 0;
++    if (event.type === "scroll") {
++      // The newest popup that can still move: a small popup opened by hovering (the text
++      // slides under the mouse pointer) must not stop the one being read.
++      const views = popupViews.slice(0, popups.length);
++      const target = views.findLast((view) => view?.canScroll(event.delta));
++      target?.controllerAction("scroll", event.delta);
++      if (controllerConfig.controllerShowValues) {
++        controllerDebug.scroll = popups.length
++          ? `${target ? `popup ${views.indexOf(target) + 1}/${popups.length}` : "no popup can move"} · ` +
++            `step ${event.delta.toFixed(1)} · lists ${views.map((view) => view?.scrollInfo() ?? "?").join(", ")}`
++          : "no popup open";
++      }
++      return;
++    }
++    if (event.type === "direction") {
++      if (cursorActive) {
++        postToFrame({ hoshi: "cursor", op: "move", dir: event.direction, follow });
++      } else if (event.direction === "left" || event.direction === "right") {
++        const reverse = vertical && hotkeyConfig.reversePageVertical;
++        postTurn((event.direction === "right") !== reverse ? "forward" : "backward");
++      }
++      return;
++    }
++    const audio = !!sasayaki?.hasAudio;
++    const swap = vertical && controllerConfig.controllerSwapVertical;
++    switch (controllerAction(event.button, { popup: follow, cursor: cursorActive })) {
++      case "playPause":
++        if (audio) toggleSasayakiPlayback();
++        break;
++      case "repeatCue":
++        if (audio) sasayaki?.repeatCue();
++        break;
++      case "previousCue":
++        if (audio) (swap ? sasayaki?.nextCue() : sasayaki?.prevCue());
++        break;
++      case "nextCue":
++        if (audio) (swap ? sasayaki?.prevCue() : sasayaki?.nextCue());
++        break;
++      case "toggleTracking":
++        toggleTracking();
++        break;
++      case "toggleCursor":
++        setCursor(!cursorActive);
++        break;
++      case "leaveCursor":
++        setCursor(false);
++        break;
++      case "lookup":
++        postToFrame({ hoshi: "cursor", op: "lookup" });
++        break;
++      case "previousWord":
++        postToFrame({ hoshi: "cursor", op: "word", step: swap ? 1 : -1, follow });
++        break;
++      case "nextWord":
++        postToFrame({ hoshi: "cursor", op: "word", step: swap ? -1 : 1, follow });
++        break;
++      case "mine1":
++        popup?.entryAction("mine", 0);
++        break;
++      case "mine2":
++        popup?.entryAction("mine", 1);
++        break;
++      case "mine3":
++        popup?.entryAction("mine", 2);
++        break;
++      case "playAudio":
++        popup?.entryAction("audio");
++        break;
++      case "previousEntry":
++        popup?.controllerAction("entry", -1);
++        break;
++      case "nextEntry":
++        popup?.controllerAction("entry", 1);
++        break;
++      case "closePopup":
++        closePopups(popups.length - 1);
++        break;
++    }
++  }
++
+   function onMessage(e: MessageEvent) {
+     if (pagesFrame && e.source === pagesFrame.contentWindow) {
+       if (e.data?.hoshi === "pages" && e.data.run === String(pagesRun)) onSpineMeasured(e.data.starts);
+@@ -1331,7 +1446,7 @@
+     if (sourceKey !== frames[frames.length - 1]?.key) return;
+     switch (m?.hoshi) {
+       case "selected":
+-        pressLookup = openLookup(m.text, m.rect, m.normalizedOffset, m.sentence, m.clozeOffset, m.spine ?? index);
++        pressLookup = openLookup(m.text, m.rect, m.normalizedOffset, m.sentence, m.clozeOffset, m.spine ?? index, cursorActive);
+         break;
+       case "lookup-miss":
+         closePopups();
+@@ -1353,6 +1468,13 @@
+       case "reader-hotkey":
+         onReaderHotkey(m.key, m.repeat);
+         break;
++      case "cursor-state":
++        cursorActive = m.active;
++        break;
++      case "cursor-edge":
++        cursorEdge = m.dir;
++        postTurn(m.dir);
++        break;
+       case "selection-menu":
+         showSelectionMenu(e.source as Window);
+         break;
+@@ -1409,6 +1531,8 @@
+       case "positioned": {
+         loading = false;
+         applyingBookmark = false;
++        if (cursorActive) postToFrame({ hoshi: "cursor", op: "start", at: cursorEdge === "backward" ? "last" : "first" });
++        cursorEdge = null;
+         if (pendingSearchHighlight) {
+           const chapter = bookInfo.chapterInfo[spine[index]];
+           postToFrame({ hoshi: "search-highlight", spine: index, offset: pendingSearchHighlight.character - chapter.currentTotal, length: pendingSearchHighlight.length });
+@@ -1583,11 +1707,13 @@
+ 
+   $effect(() => {
+     window.addEventListener("message", onMessage);
++    const releaseController = useControllerHandler(onController);
+     window.addEventListener("keydown", onKey);
+     window.addEventListener("resize", onResize);
+     window.addEventListener("wheel", onWheel, { passive: false });
+     return () => {
+       window.removeEventListener("message", onMessage);
++      releaseController();
+       window.removeEventListener("keydown", onKey);
+       window.removeEventListener("resize", onResize);
+       window.removeEventListener("wheel", onWheel);
+diff --git a/src/lib/Settings.svelte b/src/lib/Settings.svelte
+index 4dc8745..27331ce 100644
+--- a/src/lib/Settings.svelte
++++ b/src/lib/Settings.svelte
+@@ -71,6 +71,8 @@
+   import SettingToggle from "./SettingToggle.svelte";
+   import SettingRow from "./SettingRow.svelte";
+   import SettingsSection from "./SettingsSection.svelte";
++  import ControllerSettings from "./ControllerSettings.svelte";
++  import Toast from "./Toast.svelte";
+   import PageHeader from "./PageHeader.svelte";
+ 
+   let {
+@@ -164,6 +166,12 @@
+ 
+   let bindingKey = $state<Exclude<keyof HotkeyConfig, "clickLookup" | "hidePopupOnCursorExit" | "hidePopupOnCursorExitDelay" | "disableReaderWheel" | "reversePageVertical" | "scanDelay" | "pageClickZone"> | null>(null);
+   let bindingError = $state("");
++  // Linux build (0022): a key that cannot be assigned also shows as a notification, since
++  // the message under the sections is easy to miss.
++  let bindingToast = $state<Toast>();
++  $effect(() => {
++    if (bindingError) bindingToast?.show(bindingError, "error");
++  });
+ 
+   function startBinding(key: Exclude<keyof HotkeyConfig, "clickLookup" | "hidePopupOnCursorExit" | "hidePopupOnCursorExitDelay" | "disableReaderWheel" | "reversePageVertical" | "scanDelay" | "pageClickZone">, button: HTMLButtonElement) {
+     button.focus();
+@@ -1419,6 +1427,8 @@
+         {#if bindingError}
+           <p class="select-text text-sm text-error">{bindingError}</p>
+         {/if}
++        <ControllerSettings />
++        <Toast bind:this={bindingToast} />
+       {:else if anki}
+         <SettingsSection title="Anki">
+           <SettingRow label="Enable">
+diff --git a/src/lib/aboutLicensesLinux.ts b/src/lib/aboutLicensesLinux.ts
+index 54caabb..73161be 100644
+--- a/src/lib/aboutLicensesLinux.ts
++++ b/src/lib/aboutLicensesLinux.ts
+@@ -28,6 +28,18 @@ export const aboutLicensesLinux = [
+         "url": "https://huggingface.co/reazon-research/reazonspeech-k2-v2",
+         "text": null
+       },
++      {
++        "name": "gilrs (game controller input)",
++        "license": "Apache-2.0 OR MIT",
++        "url": "https://gitlab.com/gilrs-project/gilrs",
++        "text": null
++      },
++      {
++        "name": "SDL_GameControllerDB (controller mappings, in gilrs)",
++        "license": "Zlib",
++        "url": "https://github.com/mdqinc/SDL_GameControllerDB",
++        "text": null
++      },
+       {
+         "name": "sherpa-onnx",
+         "license": "Apache-2.0",
+diff --git a/src/lib/controller.svelte.ts b/src/lib/controller.svelte.ts
+new file mode 100644
+index 0000000..0694435
+--- /dev/null
++++ b/src/lib/controller.svelte.ts
+@@ -0,0 +1,309 @@
++// Linux build (0022): game controller support. Buttons trigger reader actions; the D-pad
++// and left stick turn pages or move the text cursor; the right stick scrolls the popup.
++// Only acts while the window has focus. On Linux the backend reads the controller
++// (controller.rs: WebKitGTK's Gamepad API does not reach Hoshi's window); elsewhere the
++// Gamepad API is used. Both report the W3C "standard" layout.
++
++import { invoke } from "@tauri-apps/api/core";
++import { listen } from "@tauri-apps/api/event";
++import { persisted } from "./persisted.svelte";
++import { isLinux } from "./platform";
++
++/** Standard-layout buttons by position; what is printed on them depends on the controller. */
++export const controllerButtons = [
++  "Bottom",
++  "Right",
++  "Left",
++  "Top",
++  "LB",
++  "RB",
++  "LT",
++  "RT",
++  "Select",
++  "Start",
++  "L3",
++  "R3",
++  "D-pad Up",
++  "D-pad Down",
++  "D-pad Left",
++  "D-pad Right",
++  "Home",
++] as const;
++
++export type ControllerLabels = "xbox" | "nintendo" | "playstation" | "position";
++
++export const controllerLabelStyles: { value: ControllerLabels; label: string }[] = [
++  { value: "xbox", label: "Xbox (A bottom)" },
++  { value: "nintendo", label: "Nintendo (B bottom)" },
++  { value: "playstation", label: "PlayStation (✕ bottom)" },
++  { value: "position", label: "By Position" },
++];
++
++/** Names of buttons 0–11 and 16 in each style (the D-pad keeps its names). */
++const labelSets: Record<Exclude<ControllerLabels, "position">, Record<number, string>> = {
++  xbox: { 0: "A", 1: "B", 2: "X", 3: "Y", 4: "LB", 5: "RB", 6: "LT", 7: "RT", 8: "View", 9: "Menu", 10: "LS", 11: "RS" },
++  nintendo: { 0: "B", 1: "A", 2: "Y", 3: "X", 4: "L", 5: "R", 6: "ZL", 7: "ZR", 8: "−", 9: "+", 10: "LS", 11: "RS" },
++  playstation: { 0: "✕", 1: "○", 2: "□", 3: "△", 4: "L1", 5: "R1", 6: "L2", 7: "R2", 8: "Create", 9: "Options", 10: "L3", 11: "R3" },
++};
++
++const DPAD = { up: 12, down: 13, left: 14, right: 15 } as const;
++
++export type ControllerSection = "Reading" | "Text Cursor" | "Popup";
++
++/** Actions in order of priority: an open popup first, then the text cursor, then reading. */
++export const controllerActions = [
++  { key: "playPause", label: "Play / Pause", section: "Reading", button: 0 },
++  { key: "repeatCue", label: "Repeat Cue", section: "Reading", button: 2 },
++  { key: "previousCue", label: "Previous Cue", section: "Reading", button: 4 },
++  { key: "nextCue", label: "Next Cue", section: "Reading", button: 5 },
++  { key: "toggleCursor", label: "Text Cursor On / Off", section: "Reading", button: 3 },
++  { key: "toggleTracking", label: "Pause / Resume Statistics", section: "Reading", button: -1 },
++  { key: "lookup", label: "Look Up", section: "Text Cursor", button: 0 },
++  { key: "previousWord", label: "Previous Word", section: "Text Cursor", button: 4 },
++  { key: "nextWord", label: "Next Word", section: "Text Cursor", button: 5 },
++  { key: "leaveCursor", label: "Leave Text Cursor", section: "Text Cursor", button: 1 },
++  { key: "mine1", label: "Mine Format 1", section: "Popup", button: 0 },
++  { key: "mine2", label: "Mine Format 2", section: "Popup", button: 2 },
++  { key: "mine3", label: "Mine Format 3", section: "Popup", button: -1 },
++  { key: "playAudio", label: "Play Audio", section: "Popup", button: 3 },
++  { key: "previousEntry", label: "Previous Entry", section: "Popup", button: 4 },
++  { key: "nextEntry", label: "Next Entry", section: "Popup", button: 5 },
++  { key: "closePopup", label: "Close Popup", section: "Popup", button: 1 },
++] as const satisfies readonly { key: string; label: string; section: ControllerSection; button: number }[];
++
++export type ControllerAction = (typeof controllerActions)[number]["key"];
++
++export type ControllerConfig = {
++  controllerEnabled: boolean;
++  controllerLabels: ControllerLabels;
++  /** In vertical text, previous/next cue and word are swapped (the left button goes forward). */
++  controllerSwapVertical: boolean;
++  /** Shows the controller's live values (Settings → Input → Controller), for troubleshooting. */
++  controllerShowValues: boolean;
++} & Record<ControllerAction, number>;
++
++const defaults = Object.fromEntries([
++  ["controllerEnabled", true],
++  ["controllerLabels", "xbox"],
++  ["controllerSwapVertical", false],
++  ["controllerShowValues", false],
++  ...controllerActions.map((action) => [action.key, action.button]),
++]) as ControllerConfig;
++
++const store = persisted<ControllerConfig>("controller.config", defaults);
++export const controllerConfig = store.config;
++export const saveControllerConfig = store.save;
++
++export function resetControllerBindings() {
++  for (const action of controllerActions) controllerConfig[action.key] = action.button;
++  saveControllerConfig();
++}
++
++export function controllerButtonLabel(button: number): string {
++  if (button < 0) return "None";
++  const style = controllerConfig.controllerLabels;
++  return (style !== "position" && labelSets[style]?.[button]) || (controllerButtons[button] ?? `Button ${button}`);
++}
++
++/** The button's position, for a tooltip next to its printed name. */
++export function controllerButtonPosition(button: number): string {
++  return button < 0 ? "" : (controllerButtons[button] ?? `Button ${button}`);
++}
++
++/** The action a button triggers, looking at the open popup, then the cursor, then reading. */
++export function controllerAction(
++  button: number,
++  context: { popup: boolean; cursor: boolean },
++): ControllerAction | null {
++  const sections: ControllerSection[] = [
++    ...(context.popup ? (["Popup"] as const) : []),
++    ...(context.cursor ? (["Text Cursor"] as const) : []),
++    "Reading",
++  ];
++  for (const section of sections) {
++    const action = controllerActions.find(
++      (entry) => entry.section === section && controllerConfig[entry.key] === button,
++    );
++    if (action) return action.key;
++  }
++  return null;
++}
++
++export type Direction = "up" | "down" | "left" | "right";
++export type ControllerEvent =
++  | { type: "button"; button: number }
++  | { type: "direction"; direction: Direction; repeat: boolean }
++  | { type: "scroll"; delta: number };
++
++type Handler = (event: ControllerEvent) => void;
++
++const REPEAT_DELAY = 350;
++const REPEAT_INTERVAL = 90;
++const STICK_DIRECTION = 0.5;
++const STICK_DEADZONE = 0.2;
++const TRIGGER_PRESSED = 0.5;
++const SCROLL_SPEED = 24;
++
++const handlers: Handler[] = [];
++let capture: ((button: number) => void) | null = null;
++let frame = 0;
++let previous: boolean[] = [];
++let held: { direction: Direction; since: number; last: number } | null = null;
++
++/** Name of the controller in use, or null: updated while polling. */
++export const controllerStatus = $state<{ name: string | null }>({ name: null });
++
++/** The newest handler gets the events (Settings over the reader blocks it); returns a release. */
++export function useControllerHandler(next: Handler): () => void {
++  handlers.push(next);
++  ensurePolling();
++  return () => {
++    const index = handlers.lastIndexOf(next);
++    if (index >= 0) handlers.splice(index, 1);
++  };
++}
++
++function handler(event: ControllerEvent) {
++  handlers[handlers.length - 1]?.(event);
++}
++
++/** Resolves with the next button pressed (for Settings), or -1 when cancelled. */
++export function captureControllerButton(): { promise: Promise<number>; cancel: () => void } {
++  let done: (button: number) => void = () => {};
++  const promise = new Promise<number>((resolve) => (done = resolve));
++  capture = (button) => {
++    capture = null;
++    done(button);
++  };
++  ensurePolling();
++  return {
++    promise,
++    cancel: () => {
++      if (capture) capture(-1);
++    },
++  };
++}
++
++type Pad = {
++  id: string;
++  buttons: readonly { pressed: boolean; value: number }[];
++  axes: readonly number[];
++};
++
++type NativeState = { name: string | null; buttons: number[]; axes: number[] };
++let native: Pad | null = null;
++
++function setNative(state: NativeState) {
++  native = state.name
++    ? {
++        id: state.name,
++        buttons: state.buttons.map((value) => ({ pressed: value >= 0.5, value })),
++        axes: state.axes,
++      }
++    : null;
++  controllerStatus.name = native?.id ?? null;
++  if (native) ensurePolling();
++}
++
++function activePad(): Pad | null {
++  if (isLinux) return native;
++  const pads = (navigator.getGamepads?.() ?? []).filter((pad): pad is Gamepad => !!pad?.connected);
++  return pads.find((pad) => pad.mapping === "standard") ?? pads[0] ?? null;
++}
++
++function pressed(pad: Pad, index: number): boolean {
++  const button = pad.buttons[index];
++  if (!button) return false;
++  return index === 6 || index === 7 ? button.value >= TRIGGER_PRESSED : button.pressed;
++}
++
++function stickDirection(x: number, y: number): Direction | null {
++  if (Math.max(Math.abs(x), Math.abs(y)) < STICK_DIRECTION) return null;
++  if (Math.abs(x) > Math.abs(y)) return x > 0 ? "right" : "left";
++  return y > 0 ? "down" : "up";
++}
++
++function direction(pad: Pad): Direction | null {
++  for (const [name, index] of Object.entries(DPAD)) {
++    if (pressed(pad, index)) return name as Direction;
++  }
++  return stickDirection(pad.axes[0] ?? 0, pad.axes[1] ?? 0);
++}
++
++/** Live values for the "Show Input Values" readout (updated about ten times a second). */
++export const controllerDebug = $state({
++  rate: 0,
++  focused: true,
++  axes: [] as number[],
++  buttons: [] as number[],
++  scroll: "",
++});
++let polls = 0;
++let rateSince = 0;
++let shownAt = 0;
++
++function showValues(pad: Pad | null, now: number) {
++  polls++;
++  if (now - rateSince >= 1000) {
++    controllerDebug.rate = Math.round((polls * 1000) / (now - rateSince));
++    polls = 0;
++    rateSince = now;
++  }
++  if (now - shownAt < 100) return;
++  shownAt = now;
++  controllerDebug.focused = document.hasFocus();
++  controllerDebug.axes = pad ? [...pad.axes] : [];
++  controllerDebug.buttons = pad ? pad.buttons.flatMap((button, index) => (button.value > 0.05 ? [index] : [])) : [];
++}
++
++function poll() {
++  frame = 0;
++  const pad = activePad();
++  controllerStatus.name = pad?.id ?? null;
++  const now = performance.now();
++  if (controllerConfig.controllerShowValues) showValues(pad, now);
++  if (pad && (capture || (handlers.length && controllerConfig.controllerEnabled && document.hasFocus()))) {
++    const buttons = pad.buttons.map((_, index) => pressed(pad, index));
++    buttons.forEach((down, index) => {
++      if (!down || previous[index]) return;
++      if (capture) capture(index);
++      else if (!(Object.values(DPAD) as number[]).includes(index)) handler({ type: "button", button: index });
++    });
++    previous = buttons;
++
++    const dir = capture ? null : direction(pad);
++    if (!dir) held = null;
++    else if (held?.direction !== dir) {
++      held = { direction: dir, since: now, last: now };
++      handler({ type: "direction", direction: dir, repeat: false });
++    } else if (now - held.since >= REPEAT_DELAY && now - held.last >= REPEAT_INTERVAL) {
++      held.last = now;
++      handler({ type: "direction", direction: dir, repeat: true });
++    }
++
++    const y = pad.axes[3] ?? 0;
++    if (!capture && Math.abs(y) > STICK_DEADZONE) {
++      const strength = (Math.abs(y) - STICK_DEADZONE) / (1 - STICK_DEADZONE);
++      handler({ type: "scroll", delta: Math.sign(y) * strength * strength * SCROLL_SPEED });
++    }
++  } else {
++    previous = pad ? pad.buttons.map((_, index) => pressed(pad, index)) : [];
++    held = null;
++  }
++  // Without a controller, wait for "gamepadconnected" instead of polling every frame.
++  if (pad) ensurePolling();
++}
++
++function ensurePolling() {
++  if (frame || (!handlers.length && !capture)) return;
++  frame = requestAnimationFrame(poll);
++}
++
++if (isLinux) {
++  // Listen first: the backend starts reading on the first "controller_state" call.
++  listen<NativeState>("controller-state", (event) => setNative(event.payload))
++    .then(() => invoke<NativeState>("controller_state"))
++    .then(setNative, () => {});
++} else {
++  window.addEventListener("gamepadconnected", ensurePolling);
++}
+diff --git a/src/reader/cursor.js b/src/reader/cursor.js
+new file mode 100644
+index 0000000..3ec5ac5
+--- /dev/null
++++ b/src/reader/cursor.js
+@@ -0,0 +1,393 @@
++// Linux build (0022): text cursor for controllers. A box marks one character; it moves
++// by character, line or word, and a lookup starts at it as if the mouse pointed there.
++// In paged mode, moving past the page asks the app to turn it ("cursor-edge"); in
++// continuous mode the cursor scrolls into view.
++window.hoshiCursor = (function () {
++    const params = new URLSearchParams(location.search);
++    const scanLength = Number(params.get('sl')) || 16;
++    const continuous = location.pathname.endsWith('__continuous.html');
++    const selection = window.hoshiSelection;
++    const MAX_STEPS = 4000;
++
++    let active = false;
++    let current = null; // { node, offset }
++    let pendingEdge = null;
++    let goal = null; // distance along the line kept over several line moves
++    let box = null;
++    let checkFrame = 0;
++
++    function post(message) {
++        parent.postMessage(message, '*');
++    }
++
++    function vertical() {
++        return selection.isVertical();
++    }
++
++    function charLength(node, offset) {
++        const code = node.data.charCodeAt(offset);
++        return code >= 0xd800 && code <= 0xdbff && offset + 1 < node.data.length ? 2 : 1;
++    }
++
++    function charAt(position) {
++        return position.node.data.substr(position.offset, charLength(position.node, position.offset));
++    }
++
++    function rectOf(position) {
++        const range = document.createRange();
++        range.setStart(position.node, position.offset);
++        range.setEnd(position.node, position.offset + charLength(position.node, position.offset));
++        for (const rect of range.getClientRects()) {
++            if (rect.width > 0 || rect.height > 0) {
++                return rect;
++            }
++        }
++        return null;
++    }
++
++    function visible(rect) {
++        const x = (rect.left + rect.right) / 2;
++        const y = (rect.top + rect.bottom) / 2;
++        return x >= 0 && x <= window.innerWidth && y >= 0 && y <= window.innerHeight;
++    }
++
++    function walker(node) {
++        const result = selection.createWalker(document.body);
++        result.currentNode = node;
++        return result;
++    }
++
++    /** Positions after (step 1) or before (step -1) `from`, in document order. */
++    function* positions(from, step) {
++        let node = from.node;
++        let offset = from.offset;
++        const walk = walker(node);
++        for (let count = 0; count < MAX_STEPS; count++) {
++            if (step > 0) {
++                offset += charLength(node, offset);
++                while (offset >= node.data.length) {
++                    node = walk.nextNode();
++                    if (!node) return;
++                    offset = 0;
++                }
++            } else {
++                offset -= 1;
++                while (offset < 0) {
++                    node = walk.previousNode();
++                    if (!node) return;
++                    offset = node.data.length - 1;
++                }
++                const code = node.data.charCodeAt(offset);
++                if (offset > 0 && code >= 0xdc00 && code <= 0xdfff) offset -= 1;
++            }
++            yield { node, offset };
++        }
++    }
++
++    /** Characters a lookup can start at, with their on-screen box. */
++    function* characters(from, step) {
++        for (const position of positions(from, step)) {
++            if (selection.isScanBoundary(charAt(position))) continue;
++            const rect = rectOf(position);
++            if (rect) yield { position, rect };
++        }
++    }
++
++    function usable(position) {
++        return position.offset < position.node.data.length &&
++            !selection.isScanBoundary(charAt(position)) && !!rectOf(position);
++    }
++
++    function textNodes() {
++        const walk = selection.createWalker(document.body);
++        const nodes = [];
++        let node;
++        while ((node = walk.nextNode())) nodes.push(node);
++        return nodes;
++    }
++
++    /** The first (or last) character shown on screen. */
++    function edgeCharacter(last) {
++        const nodes = textNodes();
++        if (last) nodes.reverse();
++        const range = document.createRange();
++        for (const node of nodes) {
++            range.selectNodeContents(node);
++            const bounds = range.getBoundingClientRect();
++            if (!bounds.width && !bounds.height) continue;
++            if (bounds.right < 0 || bounds.left > window.innerWidth ||
++                bounds.bottom < 0 || bounds.top > window.innerHeight) continue;
++            const offsets = [];
++            for (let offset = 0; offset < node.data.length; offset += charLength(node, offset)) offsets.push(offset);
++            if (last) offsets.reverse();
++            for (const offset of offsets) {
++                const position = { node, offset };
++                if (selection.isScanBoundary(charAt(position))) continue;
++                const rect = rectOf(position);
++                if (rect && visible(rect)) return position;
++            }
++        }
++        return null;
++    }
++
++    function cueCharacter() {
++        const cue = document.querySelector('.hoshi-sasayaki-cue.hoshi-sasayaki-active');
++        if (!cue) return null;
++        const walk = selection.createWalker(cue);
++        let node;
++        while ((node = walk.nextNode())) {
++            for (let offset = 0; offset < node.data.length; offset += charLength(node, offset)) {
++                const position = { node, offset };
++                const rect = usable(position) && rectOf(position);
++                if (rect) return visible(rect) ? position : null;
++            }
++        }
++        return null;
++    }
++
++    function render() {
++        const rect = active && current?.node.isConnected ? rectOf(current) : null;
++        if (!rect) {
++            box?.remove();
++            box = null;
++            return;
++        }
++        if (!box) {
++            box = document.createElement('div');
++            box.className = 'hoshi-controller-cursor';
++            box.style.cssText = 'position: fixed; pointer-events: none; z-index: 2147483647; box-sizing: border-box;' +
++                'border: 2px solid var(--hoshi-cursor-color, #f59e0b); border-radius: 4px;';
++            document.documentElement.appendChild(box);
++        }
++        box.style.left = `${rect.left - 2}px`;
++        box.style.top = `${rect.top - 2}px`;
++        box.style.width = `${rect.width + 4}px`;
++        box.style.height = `${rect.height + 4}px`;
++    }
++
++    function reveal(rect) {
++        const margin = Math.min(48, window.innerWidth / 6, window.innerHeight / 6);
++        const scroller = document.body;
++        if (rect.left < margin) scroller.scrollLeft += rect.left - margin;
++        else if (rect.right > window.innerWidth - margin) scroller.scrollLeft += rect.right - (window.innerWidth - margin);
++        if (rect.top < margin) scroller.scrollTop += rect.top - margin;
++        else if (rect.bottom > window.innerHeight - margin) scroller.scrollTop += rect.bottom - (window.innerHeight - margin);
++    }
++
++    /** Moves to `target` (from characters()), turning the page when it is not shown. */
++    function go(target, step) {
++        if (!target) {
++            if (!continuous) edge(step);
++            return false;
++        }
++        if (continuous) {
++            current = target.position;
++            reveal(target.rect);
++        } else if (visible(target.rect)) {
++            current = target.position;
++        } else {
++            edge(step);
++            return false;
++        }
++        render();
++        return true;
++    }
++
++    function edge(step) {
++        pendingEdge = step > 0 ? 'forward' : 'backward';
++        post({ hoshi: 'cursor-edge', dir: pendingEdge });
++    }
++
++    function moveCharacter(step) {
++        goal = null;
++        if (!current) return edge(step);
++        go(characters(current, step).next().value, step);
++    }
++
++    function geometry() {
++        const isVertical = vertical();
++        const block = (rect) => isVertical ? (rect.left + rect.right) / 2 : (rect.top + rect.bottom) / 2;
++        const size = (rect) => Math.max(isVertical ? rect.width : rect.height, 4);
++        return {
++            inline: (rect) => isVertical ? (rect.top + rect.bottom) / 2 : (rect.left + rect.right) / 2,
++            newLine: (a, b) => Math.abs(block(a) - block(b)) > Math.max(size(a), size(b)) * 0.6,
++        };
++    }
++
++    /** The first character of the line holding `position`. */
++    function lineStartOf(position, g) {
++        let start = { position, rect: rectOf(position) };
++        for (const candidate of characters(position, -1)) {
++            if (g.newLine(candidate.rect, start.rect)) break;
++            start = candidate;
++        }
++        return start;
++    }
++
++    /** Along the line starting at `start`, the character closest to `along` from its start. */
++    function closestAlong(start, along, g) {
++        let best = start;
++        let previous = start.rect;
++        for (const candidate of characters(start.position, 1)) {
++            if (g.newLine(candidate.rect, previous)) break;
++            const distance = g.inline(candidate.rect) - g.inline(start.rect);
++            if (Math.abs(distance - along) < Math.abs(g.inline(best.rect) - g.inline(start.rect) - along)) best = candidate;
++            if (distance > along) break;
++            previous = candidate.rect;
++        }
++        return best;
++    }
++
++    function moveLine(step) {
++        if (!current) return edge(step);
++        const g = geometry();
++        const here = rectOf(current);
++        if (!here) return edge(step);
++        // Where the cursor sits along its line, kept over several line moves like a text editor.
++        const along = goal ?? g.inline(here) - g.inline(lineStartOf(current, g).rect);
++        goal = along;
++
++        // The first character of the next line, or of the previous one.
++        let start = null;
++        let crossed = false;
++        let previous = here;
++        for (const candidate of characters(current, step)) {
++            if (g.newLine(candidate.rect, previous)) {
++                if (step > 0) {
++                    start = candidate;
++                    break;
++                }
++                if (crossed) break;
++                crossed = true;
++            }
++            if (crossed) start = candidate;
++            previous = candidate.rect;
++        }
++        if (!start) return go(null, step);
++        go(closestAlong(start, along, g), step);
++    }
++
++    function block(node) {
++        const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
++        return element?.closest('p, h1, h2, h3, h4, h5, h6, li, blockquote, td, div') || document.body;
++    }
++
++    /** Word starts of the block holding `position`, with the index of `position`. */
++    function words(position) {
++        const container = block(position.node);
++        const walk = selection.createWalker(container);
++        const map = [];
++        let text = '';
++        let index = -1;
++        let node;
++        while ((node = walk.nextNode())) {
++            for (let offset = 0; offset < node.data.length; offset += charLength(node, offset)) {
++                if (node === position.node && offset === position.offset) index = text.length;
++                const char = node.data.substr(offset, charLength(node, offset));
++                for (let i = 0; i < char.length; i++) map.push({ node, offset });
++                text += char;
++            }
++        }
++        const segmenter = new Intl.Segmenter('ja', { granularity: 'word' });
++        const starts = [...segmenter.segment(text)]
++            .filter((segment) => segment.isWordLike)
++            .map((segment) => ({ index: segment.index, position: map[segment.index] }));
++        return { starts, index };
++    }
++
++    function moveWord(step) {
++        goal = null;
++        if (!current) return edge(step);
++        if (typeof Intl.Segmenter !== 'function') return moveCharacter(step);
++        const { starts, index } = words(current);
++        const target = step > 0
++            ? starts.find((start) => start.index > index)
++            : starts.findLast((start) => start.index < index);
++        if (target && usable(target.position)) {
++            return go({ position: target.position, rect: rectOf(target.position) }, step);
++        }
++        // Past the block: the first word of the next one, or the start of the word before.
++        const next = characters(current, step).next().value;
++        if (!next || step > 0) return go(next, step);
++        const before = words(next.position);
++        const start = before.starts.findLast((entry) => entry.index <= before.index);
++        const position = start && usable(start.position) ? start.position : next.position;
++        go({ position, rect: rectOf(position) }, step);
++    }
++
++    function lookup() {
++        const rect = current && rectOf(current);
++        if (!rect) return;
++        selection.selectText((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2, scanLength);
++    }
++
++    function place(at) {
++        goal = null;
++        current = at === 'cue' ? (cueCharacter() || edgeCharacter(false)) : edgeCharacter(at === 'last');
++        render();
++    }
++
++    function start(at) {
++        active = true;
++        pendingEdge = null;
++        place(at || 'cue');
++        post({ hoshi: 'cursor-state', active: true });
++    }
++
++    function stop() {
++        active = false;
++        current = null;
++        pendingEdge = null;
++        render();
++        post({ hoshi: 'cursor-state', active: false });
++    }
++
++    // After a page turn (by the cursor or any other way), keep the cursor on screen.
++    function check() {
++        checkFrame = 0;
++        if (!active) return;
++        const rect = current?.node.isConnected ? rectOf(current) : null;
++        if (rect && visible(rect)) {
++            render();
++            return;
++        }
++        const along = goal;
++        place(pendingEdge === 'backward' ? 'last' : 'first');
++        pendingEdge = null;
++        // After a line move across the page, land on the new page's line at the same place.
++        if (along !== null && current) {
++            const g = geometry();
++            const best = closestAlong(lineStartOf(current, g), along, g);
++            if (visible(best.rect)) current = best.position;
++            goal = along;
++            render();
++        }
++    }
++
++    document.addEventListener('scroll', () => {
++        if (active && !checkFrame) checkFrame = requestAnimationFrame(check);
++    }, true);
++    window.addEventListener('resize', () => {
++        if (active && !checkFrame) checkFrame = requestAnimationFrame(check);
++    });
++
++    window.addEventListener('message', (e) => {
++        const m = e.data;
++        if (m?.hoshi !== 'cursor') return;
++        if (m.op === 'start') start(m.at);
++        else if (m.op === 'stop') stop();
++        else if (!active) return;
++        else if (m.op === 'lookup') lookup();
++        else if (m.op === 'move' || m.op === 'word') {
++            const isVertical = vertical();
++            const along = isVertical ? { up: -1, down: 1 } : { left: -1, right: 1 };
++            const across = isVertical ? { right: -1, left: 1 } : { up: -1, down: 1 };
++            if (m.op === 'word') moveWord(m.step);
++            else if (m.dir in along) moveCharacter(along[m.dir]);
++            else if (m.dir in across) moveLine(across[m.dir]);
++            if (m.follow) lookup();
++        }
++    });
++
++    return { start, stop, get active() { return active; } };
++})();
