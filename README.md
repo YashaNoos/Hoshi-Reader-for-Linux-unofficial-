@@ -92,6 +92,11 @@ The patches should apply anywhere upstream's
 are met (Rust, Node with pnpm, CMake, a C++23 compiler, WebKitGTK 4.1). The
 [AppImage job](.github/workflows/build-arch.yml) shows the steps on Ubuntu 24.04.
 
+CMake must be 3.31 or newer (glaze, in the dictionary engine, requires it). Ubuntu
+24.04's `cmake` package is 3.28, so install a newer one, for example with
+`pipx install cmake` (make sure `~/.local/bin` comes first in your `PATH`) or from
+[Kitware's apt repository](https://apt.kitware.com/). Check with `cmake --version`.
+
 ## Limitations
 
 Please read these before installing.
