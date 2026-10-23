@@ -50,7 +50,7 @@ noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
 # Refresh the patch sums with `updpkgsums` after changing a patch.
 sha256sums=('SKIP'
             '1f0f4c82dc82880628f4674acedda5cfd22c884999f42cfa0331ac1651a6e498'
-            'a427a786a50c20f2771eabd817e7e16070b060456f46bed53b74eb62a5946b38'
+            'b82598aa193a5e202fbbf1b79656002cf7359e92aebe44ddd6de4b99e160995a'
             '954d50a359cc233f616335d6e02191c8aa774243fe54e92cff4639021bb06c8b'
             '8dcb418562d79a55b424461605c1ff247f0725edb9655b10da3108843aab4f7f'
             '1ae617fef1f855205d330e98fb03b9788048dad40edb40348b34d58926ac96ff'

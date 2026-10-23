@@ -21,23 +21,24 @@ index 2fa3e3c..a9972f6 100644
              #[cfg(windows)]
              media_controls::init(&_window).ok();
 diff --git a/src-tauri/src/local_audio.rs b/src-tauri/src/local_audio.rs
-index 752860d..b6d5e79 100644
+index 752860d..ff16c66 100644
 --- a/src-tauri/src/local_audio.rs
 +++ b/src-tauri/src/local_audio.rs
-@@ -56,16 +56,21 @@ fn query_param(uri: &str, key: &str) -> Option<String> {
+@@ -56,16 +56,22 @@ fn query_param(uri: &str, key: &str) -> Option<String> {
      Some(urlencoding::decode(value).ok()?.into_owned())
  }
  
 -fn scheme_base() -> &'static str {
 +fn scheme_base() -> String {
++    // WebKitGTK cannot play <audio> from custom schemes; see media_server.
++    // #[cfg], not cfg!(): media_server only exists on Linux.
++    #[cfg(target_os = "linux")]
++    if let Some(base) = crate::media_server::BASE.get() {
++        return format!("{base}audio/");
++    }
      if cfg!(windows) {
 -        "http://audio.localhost/"
 +        "http://audio.localhost/".to_string()
-+    } else if cfg!(target_os = "linux")
-+        && let Some(base) = crate::media_server::BASE.get()
-+    {
-+        // WebKitGTK cannot play <audio> from custom schemes; see media_server.
-+        format!("{base}audio/")
      } else {
 -        "audio://localhost/"
 +        "audio://localhost/".to_string()
