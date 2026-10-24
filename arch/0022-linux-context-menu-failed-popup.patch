@@ -1,0 +1,103 @@
+diff --git a/src-tauri/src/context_menu.rs b/src-tauri/src/context_menu.rs
+index 642ff36..020087f 100644
+--- a/src-tauri/src/context_menu.rs
++++ b/src-tauri/src/context_menu.rs
+@@ -3,13 +3,48 @@
+ // ("Couldn't map as window ... as popup because it doesn't have a parent") and
+ // places it at the wrong spot. Read the pointer position relative to our own
+ // window instead and anchor the menu there; this also works on X11.
++//
++// muda shows the menu from inside Tauri's event loop and then runs a nested GTK
++// loop until the menu sends "cancel" or "selection-done". GTK can end up with the
++// menu hidden without sending either, and the nested loop never ends:
++// - Wayland (KWin): the compositor closes the popup, e.g. on a click on the title
++//   bar or when KWin opens its own window menu; GTK hides the menu silently.
++// - X11: the popup gives up when it cannot grab the pointer and keyboard because
++//   another client holds a grab at that moment (a global shortcut, another app's
++//   menu, a screenshot tool).
++// Tauri's event loop is then blocked for good: the close button and Alt+F4 do
++// nothing and no further menu opens, while the page still draws and scrolls.
++// GTK's own rule is that a menu is on screen if gtk_widget_get_visible() says so,
++// so while a popup is in flight, check that a menu is visible and cancel the menus
++// when none is: muda takes the "cancel" as a dismissed menu and returns.
+ 
++use std::sync::atomic::{AtomicUsize, Ordering};
+ use std::sync::mpsc;
++use std::time::Duration;
+ 
++use gtk::glib;
+ use gtk::prelude::*;
+ use tauri::menu::{ContextMenu, Menu};
+ use tauri::{LogicalPosition, Manager, ResourceId, Runtime, Webview, Window};
+ 
++/// Popups asked for whose `popup`/`popup_at` has not returned yet.
++static POPUPS_IN_FLIGHT: AtomicUsize = AtomicUsize::new(0);
++
++struct InFlight;
++
++impl InFlight {
++    fn start() -> Self {
++        POPUPS_IN_FLIGHT.fetch_add(1, Ordering::SeqCst);
++        InFlight
++    }
++}
++
++impl Drop for InFlight {
++    fn drop(&mut self) {
++        POPUPS_IN_FLIGHT.fetch_sub(1, Ordering::SeqCst);
++    }
++}
++
+ fn pointer_position<R: Runtime>(window: &Window<R>) -> Option<(i32, i32)> {
+     let gdk_window = window.gtk_window().ok()?.window()?;
+     let pointer = gdk_window.display().default_seat()?.pointer()?;
+@@ -17,6 +52,35 @@ fn pointer_position<R: Runtime>(window: &Window<R>) -> Option<(i32, i32)> {
+     Some((x, y))
+ }
+ 
++/// Main thread. muda's nested loop runs gtk_main_iteration(), which dispatches GLib
++/// timeouts like this one, so the check runs while that loop is stuck.
++fn cancel_menus_that_failed_to_show() {
++    glib::timeout_add_local(Duration::from_millis(100), || {
++        if POPUPS_IN_FLIGHT.load(Ordering::SeqCst) == 0 {
++            return glib::ControlFlow::Break;
++        }
++        let menus: Vec<gtk::Menu> = gtk::Window::list_toplevels()
++            .into_iter()
++            .filter_map(|toplevel| {
++                toplevel
++                    .downcast::<gtk::Window>()
++                    .ok()?
++                    .child()?
++                    .downcast()
++                    .ok()
++            })
++            .collect();
++        // Before muda has shown the menu, or after it is closed, nothing listens to
++        // "cancel"; emitting it then does nothing.
++        if !menus.iter().any(|menu| menu.get_visible()) {
++            for menu in &menus {
++                menu.cancel();
++            }
++        }
++        glib::ControlFlow::Continue
++    });
++}
++
+ #[tauri::command]
+ pub async fn popup_menu_at_pointer<R: Runtime>(
+     webview: Webview<R>,
+@@ -27,11 +91,13 @@ pub async fn popup_menu_at_pointer<R: Runtime>(
+         .resources_table()
+         .get::<Menu<R>>(rid)
+         .map_err(|error| error.to_string())?;
++    let _in_flight = InFlight::start();
+     let (sender, receiver) = mpsc::channel();
+     let target = window.clone();
+     window
+         .run_on_main_thread(move || {
+             sender.send(pointer_position(&target)).ok();
++            cancel_menus_that_failed_to_show();
+         })
+         .map_err(|error| error.to_string())?;
+     let position = receiver.recv().ok().flatten();
