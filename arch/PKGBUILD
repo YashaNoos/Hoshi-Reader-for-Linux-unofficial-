@@ -44,6 +44,8 @@ source=("$pkgname::git+$_upstream_url.git#tag=v$pkgver"
         '0019-sasayaki-parakeet-ja.patch'
         '0020-sasayaki-aligner-unlikely-matches.patch'
         '0021-linux-wheel-whole-pixels.patch'
+        '0022-linux-context-menu-failed-popup.patch'
+        '0023-linux-close-fallbacks.patch'
         # prebuilt static library for Sasayaki transcription; the Rust crate links it
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2")
 noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
@@ -70,6 +72,8 @@ sha256sums=('SKIP'
             '8f11da558b8181d5e34823be7160dc043b0ac21326533f9960248f9baaa8f830'
             '116509f4e2cb96afdaa3704969db13035fd0cefcc704aa7d1bb3ca2f2db04a21'
             '3b330278f850f029ecb2262f70fb0e00024396b6dadb13bff425f922ae677456'
+            '5b40d8335ebdb873563d72070e014724476912b6f1543d497cb2bb752eb59a51'
+            'd8257c62d03d1b72e9ae68d2b655aa9b3e07ff5bfcc3b27ea4ee14d05565bbb6'
             'e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6')
 
 prepare() {

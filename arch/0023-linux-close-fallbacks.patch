@@ -1,0 +1,115 @@
+diff --git a/src-tauri/src/close_watchdog.rs b/src-tauri/src/close_watchdog.rs
+new file mode 100644
+index 0000000..dc82e29
+--- /dev/null
++++ b/src-tauri/src/close_watchdog.rs
+@@ -0,0 +1,76 @@
++//! Linux: closing the window always ends the app.
++//!
++//! While a book is open, the close button is answered by the page: Reader.svelte's
++//! onCloseRequested saves the reading session and then destroys the window. Tauri leaves
++//! the close to the page whenever that listener is registered on the Rust side, even when
++//! the page is gone: if WebKit's web process has crashed or hangs, the close button does
++//! nothing (the window keeps showing the last frame). And when Tauri's event loop is
++//! blocked (a GTK nested loop that never ends, see context_menu.rs), Tauri never sees
++//! the close request at all.
++//!
++//! - `close_requested`: 3 s after a close request Tauri saw, destroy the window from Rust
++//!   if the page has not. The normal exit path (Google Drive pause, at most 10 s) follows.
++//! - `install`: 20 s after GTK got a close request for the window, end the process.
++//!   This only fires when everything above failed. Nothing on Linux keeps the app open
++//!   on purpose after a close request; if that changes, this has to change too.
++
++use std::sync::atomic::{AtomicBool, Ordering};
++use std::time::Duration;
++
++use gtk::gdk;
++use gtk::glib::Propagation;
++use gtk::prelude::*;
++use tauri::{Manager, Runtime, WebviewWindow, Window};
++
++const DESTROY_AFTER: Duration = Duration::from_secs(3);
++const EXIT_AFTER: Duration = Duration::from_secs(20);
++
++pub fn close_requested<R: Runtime>(window: &Window<R>) {
++    let app = window.app_handle().clone();
++    let label = window.label().to_string();
++    tauri::async_runtime::spawn(async move {
++        tokio::time::sleep(DESTROY_AFTER).await;
++        if let Some(window) = app.get_webview_window(&label) {
++            eprintln!(
++                "hoshi: the page did not close the window within {}s; closing it",
++                DESTROY_AFTER.as_secs()
++            );
++            window.destroy().ok();
++        }
++    });
++}
++
++pub fn install<R: Runtime>(window: &WebviewWindow<R>) {
++    let Ok(gtk_window) = window.gtk_window() else {
++        return;
++    };
++    // "event" is emitted before "delete-event", whose handler (tao's) stops emission.
++    // While an open menu or a modal dialog holds a GTK grab, GTK drops the close
++    // request before either signal, so this does not fire then.
++    gtk_window.connect_event(|_, event| {
++        if event.event_type() == gdk::EventType::Delete {
++            exit_if_still_running();
++        }
++        Propagation::Proceed
++    });
++}
++
++fn exit_if_still_running() {
++    static ARMED: AtomicBool = AtomicBool::new(false);
++    if ARMED.swap(true, Ordering::SeqCst) {
++        return;
++    }
++    std::thread::spawn(|| {
++        std::thread::sleep(EXIT_AFTER);
++        eprintln!(
++            "hoshi: still running {}s after the window was closed; exiting",
++            EXIT_AFTER.as_secs()
++        );
++        // _exit, not exit: the main thread may be stuck inside GTK, and exit() would run
++        // C/C++ static destructors (WebKit, ONNX Runtime) while other threads use them.
++        unsafe extern "C" {
++            fn _exit(status: std::ffi::c_int) -> !;
++        }
++        unsafe { _exit(0) }
++    });
++}
+diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
+index 77d386a..5714829 100644
+--- a/src-tauri/src/lib.rs
++++ b/src-tauri/src/lib.rs
+@@ -8,6 +8,8 @@ mod backup;
+ mod book;
+ mod clipboard;
+ #[cfg(target_os = "linux")]
++mod close_watchdog;
++#[cfg(target_os = "linux")]
+ mod context_menu;
+ mod crash;
+ mod css;
+@@ -224,6 +226,8 @@ pub fn run() {
+             let _window = builder.build()?;
+             #[cfg(target_os = "linux")]
+             wheel_pixels::install(&_window);
++            #[cfg(target_os = "linux")]
++            close_watchdog::install(&_window);
+             #[cfg(windows)]
+             media_controls::init(&_window).ok();
+ 
+@@ -233,6 +237,10 @@ pub fn run() {
+             Ok(())
+         })
+         .on_window_event(|_window, _event| {
++            #[cfg(target_os = "linux")]
++            if let tauri::WindowEvent::CloseRequested { .. } = _event {
++                close_watchdog::close_requested(_window);
++            }
+             #[cfg(target_os = "macos")]
+             if let tauri::WindowEvent::CloseRequested { api, .. } = _event {
+                 use tauri::Emitter;
