@@ -1,0 +1,55 @@
+diff --git a/src-tauri/src/clipboard.rs b/src-tauri/src/clipboard.rs
+index 111e3d3..9b3034b 100644
+--- a/src-tauri/src/clipboard.rs
++++ b/src-tauri/src/clipboard.rs
+@@ -133,7 +133,6 @@ static LAST_COUNT: std::sync::atomic::AtomicI64 = std::sync::atomic::AtomicI64::
+ 
+ #[cfg(target_os = "linux")]
+ fn change_count() -> i64 {
+-    use std::hash::{Hash, Hasher};
+     use std::sync::atomic::Ordering;
+ 
+     let current = arboard::Clipboard::new()
+@@ -144,15 +143,39 @@ fn change_count() -> i64 {
+         *LAST_TEXT.lock().unwrap() = None;
+         return LAST_COUNT.load(Ordering::Relaxed);
+     };
+-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+-    current.hash(&mut hasher);
+-    let count = (hasher.finish() >> 1) as i64;
++    let count = text_count(&current);
+     LAST_COUNT.store(count, Ordering::Relaxed);
+     *LAST_TEXT.lock().unwrap() = Some(current);
+     count
+ }
+ 
++// 53 bits: the count goes to JavaScript and comes back as `since`, and JavaScript
++// numbers hold whole numbers exactly only up to 2^53. A 63-bit hash came back
++// rounded, never matched, and every poll looked like a new copy: the copied text
++// then replaced whatever the user had typed into the search box.
++#[cfg(target_os = "linux")]
++fn text_count(text: &str) -> i64 {
++    use std::hash::{Hash, Hasher};
++
++    let mut hasher = std::collections::hash_map::DefaultHasher::new();
++    text.hash(&mut hasher);
++    (hasher.finish() >> 11) as i64
++}
++
+ #[cfg(target_os = "linux")]
+ fn text() -> Option<String> {
+     LAST_TEXT.lock().unwrap().take()
+ }
++
++#[cfg(all(test, target_os = "linux"))]
++mod tests {
++    #[test]
++    fn counts_survive_a_round_trip_through_javascript() {
++        for text in ["食べる", "飲む", "読む", "結婚の守護女神", "a", " "] {
++            let count = super::text_count(text);
++            // A JavaScript number is an f64.
++            assert_eq!(count as f64 as i64, count, "{text:?}");
++            assert!((0..1 << 53).contains(&count), "{text:?}");
++        }
++    }
++}

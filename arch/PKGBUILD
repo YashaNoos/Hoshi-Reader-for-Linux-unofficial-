@@ -3,7 +3,7 @@
 # Maintainer: YashaNoos (https://github.com/YashaNoos)
 pkgname=hoshi-reader-linux
 pkgver=1.2.0
-pkgrel=4
+pkgrel=5
 pkgdesc='Japanese EPUB reader with pop-up dictionary and Anki mining (unofficial Linux build)'
 arch=('x86_64')
 url='https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-'
@@ -46,6 +46,7 @@ source=("$pkgname::git+$_upstream_url.git#tag=v$pkgver"
         '0021-linux-wheel-whole-pixels.patch'
         '0022-linux-context-menu-failed-popup.patch'
         '0023-linux-close-fallbacks.patch'
+        '0024-linux-clipboard-change-count.patch'
         # prebuilt static library for Sasayaki transcription; the Rust crate links it
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2")
 noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
@@ -74,6 +75,7 @@ sha256sums=('SKIP'
             '3b330278f850f029ecb2262f70fb0e00024396b6dadb13bff425f922ae677456'
             '5b40d8335ebdb873563d72070e014724476912b6f1543d497cb2bb752eb59a51'
             'd8257c62d03d1b72e9ae68d2b655aa9b3e07ff5bfcc3b27ea4ee14d05565bbb6'
+            '11ac0c5c8b6ee190e7712bec0d9a156c1dcbed4fbe9ad939cfd6900dfd4d6616'
             'e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6')
 
 prepare() {

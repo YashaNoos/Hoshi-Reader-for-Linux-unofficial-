@@ -15,7 +15,7 @@ patches that make it build and run on Linux, plus the packaging to install it.
 | | |
 |---|---|
 | **Based on upstream** | v1.2.0 |
-| **Linux build revision** | 1.2.0-4 |
+| **Linux build revision** | 1.2.0-5 |
 | **Platform** | Linux x86_64 |
 | **Tested on** | Arch Linux, KDE Plasma (Wayland): package and AppImage<br>Ubuntu 26.04.1, GNOME: AppImage |
 | **License** | GPL-3.0-or-later, same as upstream |
@@ -164,6 +164,7 @@ Each patch in [`arch/`](arch) is one self-contained change:
 | `0021-linux-wheel-whole-pixels` | Text no longer turns blurry on every other mouse-wheel click ([#3](../../issues/3)). On KDE a click reaches WebKitGTK as 1.5 steps, which it multiplies by a step size taken from the window height; at about half of all window heights that gave half-pixel distances (e.g. 139.5 px), so every other click left the text between screen pixels. Each click is now rounded to whole pixels (140, 139, 140, … px), with the same total distance. `HOSHI_WHEEL_SNAP=0` turns it off. |
 | `0022-linux-context-menu-failed-popup` | Fixes the app getting stuck after a right-click menu: the close button and Alt+F4 did nothing and no menu opened anymore, so it had to be killed. The app waits for GTK to report that a menu closed, and GTK sometimes hides a menu without reporting it: on KDE Wayland when KWin closes the menu itself (a click on the title bar while the menu is open, or right-clicking the title bar), and on X11 when another program holds the keyboard or mouse as the menu opens. A menu that is no longer shown now counts as closed. |
 | `0023-linux-close-fallbacks` | Closing the window always ends the app. With a book open, the reader saves your reading session before the window closes; if that page has crashed or hangs, the window now closes after 3 s instead of never. As a last resort, the app exits if it is still running 20 s after you closed the window. |
+| `0024-linux-clipboard-change-count` | With the clipboard monitor on, a word you type into the dictionary search box stays searched. Before, the copied text came back and was searched again a moment after you pressed Enter. The monitor recognizes a new copy by a number, and that number was rounded on its way through the page, so every check (about three per second) looked like a new copy. |
 
 The compiler flags in the PKGBUILD work around newer GCC versions (15/16) breaking
 upstream's C++ dictionary engine because of missing standard `#include`s.
