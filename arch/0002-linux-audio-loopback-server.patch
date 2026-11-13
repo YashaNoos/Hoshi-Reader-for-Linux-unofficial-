@@ -1,5 +1,5 @@
 diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
-index 2fa3e3c..a9972f6 100644
+index 56250da..291d069 100644
 --- a/src-tauri/src/lib.rs
 +++ b/src-tauri/src/lib.rs
 @@ -15,6 +15,8 @@ mod library;
@@ -11,7 +11,7 @@ index 2fa3e3c..a9972f6 100644
  mod menu_theme;
  mod pcm;
  mod sasayaki;
-@@ -203,6 +205,8 @@ pub fn run() {
+@@ -212,6 +214,8 @@ pub fn run() {
              )?;
              #[cfg(windows)]
              let builder = builder.additional_browser_args(media_controls::BROWSER_ARGS);
@@ -358,7 +358,7 @@ index 0000000..e886e1e
 +    }
 +}
 diff --git a/src/lib/sasayakiPlayer.svelte.ts b/src/lib/sasayakiPlayer.svelte.ts
-index a7ce75a..eed7d5b 100644
+index 9a65a58..d375a3b 100644
 --- a/src/lib/sasayakiPlayer.svelte.ts
 +++ b/src/lib/sasayakiPlayer.svelte.ts
 @@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
@@ -370,7 +370,7 @@ index a7ce75a..eed7d5b 100644
  import { sasayakiConfig } from "./sasayakiConfig.svelte";
  import type { SasayakiImage, SasayakiMatch, SasayakiMatchData, SasayakiPlayback } from "./types";
  
-@@ -439,7 +439,7 @@ export class SasayakiPlayer {
+@@ -445,7 +445,7 @@ export class SasayakiPlayer {
    }
  
    private setupPlayer() {

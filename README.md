@@ -14,8 +14,8 @@ patches that make it build and run on Linux, plus the packaging to install it.
 
 | | |
 |---|---|
-| **Based on upstream** | v1.2.0 |
-| **Linux build revision** | 1.2.0-5 |
+| **Based on upstream** | v1.3.0 |
+| **Linux build revision** | 1.3.0-1 |
 | **Platform** | Linux x86_64 |
 | **Tested on** | Arch Linux, KDE Plasma (Wayland): package and AppImage<br>Ubuntu 26.04.1, GNOME: AppImage |
 | **License** | GPL-3.0-or-later, same as upstream |
@@ -92,6 +92,10 @@ The patches should apply anywhere upstream's
 are met (Rust, Node with pnpm, CMake, a C++23 compiler, WebKitGTK 4.1). The
 [AppImage job](.github/workflows/build-arch.yml) shows the steps on Ubuntu 24.04.
 
+Upstream 1.3.0 needs Rust 1.99 or newer (`rustup update`). The dictionary engine needs
+GCC 14 or newer: Ubuntu 24.04's default compiler is GCC 13, so install `g++-14` and
+build with `CC=gcc-14 CXX=g++-14`.
+
 CMake must be 3.31 or newer (glaze, in the dictionary engine, requires it). Ubuntu
 24.04's `cmake` package is 3.28, so install a newer one, for example with
 `pipx install cmake` (make sure `~/.local/bin` comes first in your `PATH`) or from
@@ -143,15 +147,14 @@ Each patch in [`arch/`](arch) is one self-contained change:
 |---|---|
 | `0001-linux-support` | Makes the app compile on Linux: clipboard, audio decoding, keyring storage for sign-in tokens. |
 | `0002-linux-audio-loopback-server` | Audiobook playback. WebKitGTK cannot play `<audio>` from custom URL schemes, so audio is served through a small local loopback server. |
-| `0003-linux-japanese-vertical-text` | Correct vertical Japanese text: rotated punctuation and long-vowel marks, Japanese instead of Chinese fonts, furigana placed as close to the text as on Windows/macOS, in vertical and horizontal text. |
+| `0003-linux-japanese-vertical-text` | Correct vertical Japanese text: rotated punctuation and long-vowel marks, Japanese instead of Chinese fonts, furigana placed as close to the text as on Windows/macOS, in vertical and horizontal text. In vertical text the Sasayaki underline runs between the text and the furigana instead of through them. |
 | `0004-linux-desktop-file-dialog` | Uses your desktop's own file dialog (for example Dolphin on KDE) through xdg-desktop-portal when available. |
-| `0005-update-tauri-2.12-wayland-titlebar` | Updates Tauri so the title bar buttons work on Wayland. |
 | `0006-linux-sasayaki-transcription` | On-device Sasayaki transcription using sherpa-onnx and the ReazonSpeech model, plugged into upstream's transcription layer (the transcript is matched to the book by upstream's own aligner). |
 | `0007-linux-wayland-context-menu` | Right-click menus open at the pointer on Wayland. |
 | `0008-linux-attribution-and-updater` | Adds this build's components to the in-app attribution page and disables the updater on Linux. |
 | `0009-linux-clipboard-monitor-reselect` | Clipboard monitor no longer resets the dictionary pane to the first word when you click another word in the search text. |
 | `0010-linux-clipboard-read-off-main-thread` | Fixes a crash when copying text inside the app (for example from a definition) while the clipboard monitor is on. |
-| `0011-linux-appimage-theme` | AppImage only: the app's Light/Dark setting applies to books and the dictionary even when the desktop uses the other color scheme. No effect in the Arch package. |
+| `0011-linux-appimage-theme` | AppImage only: the app's Light/Dark setting applies to books, the dictionary and right-click menus even when the desktop uses the other color scheme. No effect in the Arch package. |
 | `0012-linux-webkitgtk-2.54-popup-subresources` | WebKitGTK 2.54 blocks fonts, images and scripts from the app's other URL schemes inside the dictionary popup. Loads them another way so the kanji stroke-order font, dictionary images and lookups inside definitions keep working. |
 | `0013-linux-system-theme` | The "System" theme follows the desktop's light or dark color scheme (read from the desktop portal, as set by KDE and GNOME). Before, it was always light. |
 | `0014-linux-anki-cover-as-data` | Sends the book cover to Anki as data instead of a file path, so the Picture field also works when Anki is a Flatpak or Snap (which cannot read Hoshi's data folder). |

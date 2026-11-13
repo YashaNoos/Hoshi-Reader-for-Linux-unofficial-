@@ -1,8 +1,8 @@
 diff --git a/src-tauri/Cargo.toml b/src-tauri/Cargo.toml
-index 7e73681..d26c627 100644
+index f923001..ce28ad4 100644
 --- a/src-tauri/Cargo.toml
 +++ b/src-tauri/Cargo.toml
-@@ -83,7 +83,7 @@ libloading = "0.8"
+@@ -83,7 +83,7 @@ libloading = "0.9"
  
  [features]
  default = ["transcription"]
@@ -655,7 +655,7 @@ index d23b823..76c34ef 100644
              pending: VecDeque::new(),
              scheduled_through: from,
 diff --git a/src/lib/MatchDialog.svelte b/src/lib/MatchDialog.svelte
-index 88f8bbb..51adfa5 100644
+index 0dbe8c8..849a603 100644
 --- a/src/lib/MatchDialog.svelte
 +++ b/src/lib/MatchDialog.svelte
 @@ -1,7 +1,7 @@
@@ -773,10 +773,10 @@ index dc95cae..54caabb 100644
          "url": "https://huggingface.co/reazon-research/reazonspeech-k2-v2",
          "text": null
 diff --git a/src/lib/sasayakiConfig.svelte.ts b/src/lib/sasayakiConfig.svelte.ts
-index d2487db..dd3ae14 100644
+index 50c1dc5..90c1cc0 100644
 --- a/src/lib/sasayakiConfig.svelte.ts
 +++ b/src/lib/sasayakiConfig.svelte.ts
-@@ -16,6 +16,7 @@ export type SasayakiConfig = {
+@@ -20,6 +20,7 @@ export type SasayakiConfig = {
    sasayakiAudioFormat: "mp3" | "opus";
    sasayakiTranscriptionPerformance: number;
    sasayakiMergeShortCues: number;
@@ -784,7 +784,7 @@ index d2487db..dd3ae14 100644
  };
  
  const defaults: SasayakiConfig = {
-@@ -34,6 +35,7 @@ const defaults: SasayakiConfig = {
+@@ -42,6 +43,7 @@ const defaults: SasayakiConfig = {
    sasayakiAudioFormat: "mp3",
    sasayakiTranscriptionPerformance: 1,
    sasayakiMergeShortCues: 1,

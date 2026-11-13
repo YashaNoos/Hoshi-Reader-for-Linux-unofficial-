@@ -2,8 +2,8 @@
 # https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-
 # Maintainer: YashaNoos (https://github.com/YashaNoos)
 pkgname=hoshi-reader-linux
-pkgver=1.2.0
-pkgrel=5
+pkgver=1.3.0
+pkgrel=1
 pkgdesc='Japanese EPUB reader with pop-up dictionary and Anki mining (unofficial Linux build)'
 arch=('x86_64')
 url='https://github.com/YashaNoos/Hoshi-Reader-for-Linux-unofficial-'
@@ -27,7 +27,6 @@ source=("$pkgname::git+$_upstream_url.git#tag=v$pkgver"
         '0002-linux-audio-loopback-server.patch'
         '0003-linux-japanese-vertical-text.patch'
         '0004-linux-desktop-file-dialog.patch'
-        '0005-update-tauri-2.12-wayland-titlebar.patch'
         '0006-linux-sasayaki-transcription.patch'
         '0007-linux-wayland-context-menu.patch'
         '0008-linux-attribution-and-updater.patch'
@@ -52,29 +51,28 @@ source=("$pkgname::git+$_upstream_url.git#tag=v$pkgver"
 noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
 # Refresh the patch sums with `updpkgsums` after changing a patch.
 sha256sums=('SKIP'
-            '1f0f4c82dc82880628f4674acedda5cfd22c884999f42cfa0331ac1651a6e498'
-            'b82598aa193a5e202fbbf1b79656002cf7359e92aebe44ddd6de4b99e160995a'
-            '954d50a359cc233f616335d6e02191c8aa774243fe54e92cff4639021bb06c8b'
+            '56de7e7372d93758db8b537b41a4775fbc40289849fea9ef67eaae439ad65ce0'
+            '934ed27d083a90783f638221d95d3f60713372dcd0b8fbebbfe5d18de67dee14'
+            'd08649bed893775795ec7cdb699df074d51b37e7b0cb392f5b2eb22933a58910'
             '8dcb418562d79a55b424461605c1ff247f0725edb9655b10da3108843aab4f7f'
-            '1ae617fef1f855205d330e98fb03b9788048dad40edb40348b34d58926ac96ff'
-            'f457c5ff68e0e30491735ef3eb684b2294e39f29376eb8b259c5ff1eca11de49'
-            'e90434a79e05d39da63343320ad5473c4afba9d956a4ab2d488ecee190741973'
+            '6a552498bf28d0fac1c5a8cd29b7bdd77bcdd4cd0308ee0ce5e72d6963b3b783'
+            'eb8acecb526203f912ea5ad875514c67a9d6b40f96141a3e7774b3a2ad4b5769'
             'f48124c4d8bf61a905ca87e3034ea3775f10941e5957f5c49cc327c129a4f888'
-            'a67b2c5f84c9cec03bff559df5a5105995e59fcf41f3be88cd849ef6bf166804'
+            '609a92ba2f22a474781c6381cf11ee1a82c1b7af53e0b4eaa432090829af7b71'
             '1daf28728a3a43d7d5d2403cc7de902ae0374d2dd79c8a1f6b96ca837e679633'
-            '4fc131476fbd19b0d080ca3568fde99ca3251e6d8d1a39e95e017221f4e275c1'
-            'e2b3779df416537b2a7fa65840cae415530f0089a37f35d3aab078a52758288c'
-            'd828d64cc38f2d8bc8a62d7e7d093db7864588b839ad9b2c4e4e48e185923322'
-            'd1a0a0c408fe7e1d3eba633cde6c832e1f30634c3695e18b0ddd5a3f5d23692c'
-            'b170fb81361808180adeec2c5d133b04c7a9eed52c5bf0dc4cc789371c04b6a8'
-            '0b294620de781b316fd593a3ac2d369399a4c119b782c53ccafffa1d5ee1d2fe'
+            '9e6288b19a6aeafce91c1cf8eb6c0e8db7b6c273156e40d0d59b3ae9c0bed43d'
+            '44a6c7b1c28f8d6e0358528e6a3ece731f353500b23c0a8c3ed8154bac2a87e1'
+            '9eace24c45a19bb4c22a17812731e5644c3dcfa862cb9215f9dd0d8062d81d46'
+            'b44e661b9770c87ee68cd6fae83fc20007cbd9aa8ba544c7c3efd624b6ae9c2c'
+            'dee7a1a25ab30e3092e7d65a353a0087adfe31875c98d55fbb9d1ccef82bb80e'
+            '5bedc93e5c375207341f086d57283cd79ade78bd41b8bf01af6349551e67e013'
             '98188e4ee491aacb0917190ad0b0b948f7b3832af5d81b6691b5442785d70060'
-            '8a7190eab78bace8809c53658f5c87d9221fa3aa2d778844b0b946690d672aa7'
-            '8f11da558b8181d5e34823be7160dc043b0ac21326533f9960248f9baaa8f830'
-            '116509f4e2cb96afdaa3704969db13035fd0cefcc704aa7d1bb3ca2f2db04a21'
-            '3b330278f850f029ecb2262f70fb0e00024396b6dadb13bff425f922ae677456'
+            'df9de79dac10a9c7bf32bdbe03b0a7f48912eb9740eb08a540bb621024bfab61'
+            '71a2c67732d64fa0b33f1b055840c7f29500ab8118be9cbb7f8844e526dcfdea'
+            '67ee4ef2679a6c73ada983c8934a1c63b7c63582fe9f2b107de58aa6d2932ec8'
+            'a916eb1793ee7d529d4b65b3303354aab17e90fac21ad23f1ef50999ca8d706f'
             '5b40d8335ebdb873563d72070e014724476912b6f1543d497cb2bb752eb59a51'
-            'd8257c62d03d1b72e9ae68d2b655aa9b3e07ff5bfcc3b27ea4ee14d05565bbb6'
+            '1e95ccd01aefafd27bdd063736045f8acf5142319a6c3ef2428a125a40583569'
             '11ac0c5c8b6ee190e7712bec0d9a156c1dcbed4fbe9ad939cfd6900dfd4d6616'
             'e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6')
 

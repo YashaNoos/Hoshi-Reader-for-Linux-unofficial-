@@ -1,5 +1,5 @@
 diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
-index 34f4dae..77d386a 100644
+index 8674820..de53c09 100644
 --- a/src-tauri/src/lib.rs
 +++ b/src-tauri/src/lib.rs
 @@ -33,6 +33,8 @@ mod transcription;
@@ -11,7 +11,7 @@ index 34f4dae..77d386a 100644
  #[cfg(target_os = "macos")]
  mod writing_tools;
  
-@@ -220,6 +222,8 @@ pub fn run() {
+@@ -231,6 +233,8 @@ pub fn run() {
              #[cfg(target_os = "linux")]
              let builder = builder.initialization_script(media_server::init_script(app.handle()));
              let _window = builder.build()?;

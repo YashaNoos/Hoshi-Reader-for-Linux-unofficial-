@@ -45,10 +45,10 @@ index 558407b..a7e0794 100644
  }
  
 diff --git a/src/lib/DictionarySearch.svelte b/src/lib/DictionarySearch.svelte
-index a4c3195..f43c036 100644
+index 396051c..c00f895 100644
 --- a/src/lib/DictionarySearch.svelte
 +++ b/src/lib/DictionarySearch.svelte
-@@ -180,8 +180,11 @@
+@@ -182,8 +182,11 @@
          const [count, text]: [number, string | null] = await invoke("clipboard_text", { since });
          if (stopped) return;
          since = count;
