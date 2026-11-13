@@ -1,21 +1,26 @@
 diff --git a/src-tauri/src/appimage_theme.rs b/src-tauri/src/appimage_theme.rs
 new file mode 100644
-index 0000000..2e4fef6
+index 0000000..26b4a0c
 --- /dev/null
 +++ b/src-tauri/src/appimage_theme.rs
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,52 @@
 +//! AppImage only. linuxdeploy's GTK hook (apprun-hooks/linuxdeploy-plugin-gtk.sh) exports
 +//! `GTK_THEME=Adwaita:<variant>` with the variant taken from the desktop's color scheme.
 +//! A variant in GTK_THEME overrides `gtk-application-prefer-dark-theme`, which is what
 +//! `Window::set_theme` changes, so the app's own Light/Dark setting never reaches WebKit:
 +//! on a dark desktop, a book set to Light is drawn white on black (and the reverse).
 +//!
-+//! Keep the theme name, drop the variant, and remember the desktop's variant so the
-+//! "System" setting can still follow the desktop (see `desktop_color_scheme`).
++//! Any GTK_THEME, even without a variant, also makes GTK itself ignore that setting, so
++//! GTK's own widgets (the right-click menus) stayed light in the app's Dark theme.
++//!
++//! So drop GTK_THEME, remember the desktop's variant so the "System" setting can still
++//! follow the desktop (see `desktop_color_scheme`), and give GTK the same theme name as
++//! a setting instead (see `apply`).
 +
 +use std::sync::OnceLock;
 +
 +static DESKTOP_DARK: OnceLock<bool> = OnceLock::new();
++static THEME_NAME: OnceLock<String> = OnceLock::new();
 +
 +/// Must run before GTK is initialised and before any other thread exists.
 +pub fn init() {
@@ -25,12 +30,24 @@ index 0000000..2e4fef6
 +    let Ok(theme) = std::env::var("GTK_THEME") else {
 +        return;
 +    };
-+    let Some((name, variant)) = theme.split_once(':') else {
-+        return;
-+    };
-+    let _ = DESKTOP_DARK.set(variant == "dark");
++    let (name, variant) = theme.split_once(':').unwrap_or((&theme, ""));
++    if !variant.is_empty() {
++        let _ = DESKTOP_DARK.set(variant == "dark");
++    }
++    let _ = THEME_NAME.set(name.to_string());
 +    // SAFETY: called at the start of run(), before GTK starts and before any thread is spawned.
-+    unsafe { std::env::set_var("GTK_THEME", name) };
++    unsafe { std::env::remove_var("GTK_THEME") };
++}
++
++/// Once GTK is running (on the main thread): use the theme the AppImage hook chose, as a
++/// setting. Unlike GTK_THEME, the setting leaves `gtk-application-prefer-dark-theme`
++/// working, for WebKit and for GTK's own widgets.
++pub fn apply() {
++    use gtk::prelude::*;
++
++    if let (Some(name), Some(settings)) = (THEME_NAME.get(), gtk::Settings::default()) {
++        settings.set_property("gtk-theme-name", name.as_str());
++    }
 +}
 +
 +/// The desktop's color scheme as the AppImage hook saw it at launch, or `None` outside an
@@ -40,7 +57,7 @@ index 0000000..2e4fef6
 +    DESKTOP_DARK.get().map(|dark| if *dark { "dark" } else { "light" })
 +}
 diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
-index 20ac1fb..bb4fb49 100644
+index 20ac1fb..8674820 100644
 --- a/src-tauri/src/lib.rs
 +++ b/src-tauri/src/lib.rs
 @@ -2,6 +2,8 @@ pub type Fallible<T = ()> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -70,6 +87,15 @@ index 20ac1fb..bb4fb49 100644
              #[cfg(windows)]
              media_controls::media_controls_metadata,
              #[cfg(windows)]
+@@ -212,6 +218,8 @@ pub fn run() {
+             updater::install_update
+         ])
+         .setup(|app| {
++            #[cfg(target_os = "linux")]
++            appimage_theme::apply();
+             #[cfg(windows)]
+             media_controls::set_app_id(&app.config().identifier).ok();
+             let builder = tauri::WebviewWindowBuilder::from_config(
 diff --git a/src/App.svelte b/src/App.svelte
 index 8abe446..7732708 100644
 --- a/src/App.svelte

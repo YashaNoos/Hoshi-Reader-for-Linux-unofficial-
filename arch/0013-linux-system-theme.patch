@@ -1,9 +1,9 @@
 diff --git a/src-tauri/src/appimage_theme.rs b/src-tauri/src/appimage_theme.rs
-index 2e4fef6..3604cce 100644
+index 26b4a0c..77eba75 100644
 --- a/src-tauri/src/appimage_theme.rs
 +++ b/src-tauri/src/appimage_theme.rs
-@@ -27,9 +27,65 @@ pub fn init() {
-     unsafe { std::env::set_var("GTK_THEME", name) };
+@@ -44,9 +44,65 @@ pub fn apply() {
+     }
  }
  
 -/// The desktop's color scheme as the AppImage hook saw it at launch, or `None` outside an

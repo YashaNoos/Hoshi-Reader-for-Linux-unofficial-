@@ -154,7 +154,7 @@ Each patch in [`arch/`](arch) is one self-contained change:
 | `0008-linux-attribution-and-updater` | Adds this build's components to the in-app attribution page and disables the updater on Linux. |
 | `0009-linux-clipboard-monitor-reselect` | Clipboard monitor no longer resets the dictionary pane to the first word when you click another word in the search text. |
 | `0010-linux-clipboard-read-off-main-thread` | Fixes a crash when copying text inside the app (for example from a definition) while the clipboard monitor is on. |
-| `0011-linux-appimage-theme` | AppImage only: the app's Light/Dark setting applies to books and the dictionary even when the desktop uses the other color scheme. No effect in the Arch package. |
+| `0011-linux-appimage-theme` | AppImage only: the app's Light/Dark setting applies to books, the dictionary and right-click menus even when the desktop uses the other color scheme. No effect in the Arch package. |
 | `0012-linux-webkitgtk-2.54-popup-subresources` | WebKitGTK 2.54 blocks fonts, images and scripts from the app's other URL schemes inside the dictionary popup. Loads them another way so the kanji stroke-order font, dictionary images and lookups inside definitions keep working. |
 | `0013-linux-system-theme` | The "System" theme follows the desktop's light or dark color scheme (read from the desktop portal, as set by KDE and GNOME). Before, it was always light. |
 | `0014-linux-anki-cover-as-data` | Sends the book cover to Anki as data instead of a file path, so the Picture field also works when Anki is a Flatpak or Snap (which cannot read Hoshi's data folder). |
