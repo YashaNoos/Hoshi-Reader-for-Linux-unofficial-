@@ -53,7 +53,7 @@ noextract=('sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2')
 sha256sums=('SKIP'
             '56de7e7372d93758db8b537b41a4775fbc40289849fea9ef67eaae439ad65ce0'
             '934ed27d083a90783f638221d95d3f60713372dcd0b8fbebbfe5d18de67dee14'
-            'be3004acc12c8cc40bc1f14fd260fff836b6768725ba2632f20d878bb4bdde20'
+            'd08649bed893775795ec7cdb699df074d51b37e7b0cb392f5b2eb22933a58910'
             '8dcb418562d79a55b424461605c1ff247f0725edb9655b10da3108843aab4f7f'
             '6a552498bf28d0fac1c5a8cd29b7bdd77bcdd4cd0308ee0ce5e72d6963b3b783'
             'eb8acecb526203f912ea5ad875514c67a9d6b40f96141a3e7774b3a2ad4b5769'

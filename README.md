@@ -147,7 +147,7 @@ Each patch in [`arch/`](arch) is one self-contained change:
 |---|---|
 | `0001-linux-support` | Makes the app compile on Linux: clipboard, audio decoding, keyring storage for sign-in tokens. |
 | `0002-linux-audio-loopback-server` | Audiobook playback. WebKitGTK cannot play `<audio>` from custom URL schemes, so audio is served through a small local loopback server. |
-| `0003-linux-japanese-vertical-text` | Correct vertical Japanese text: rotated punctuation and long-vowel marks, Japanese instead of Chinese fonts, furigana placed as close to the text as on Windows/macOS, in vertical and horizontal text. |
+| `0003-linux-japanese-vertical-text` | Correct vertical Japanese text: rotated punctuation and long-vowel marks, Japanese instead of Chinese fonts, furigana placed as close to the text as on Windows/macOS, in vertical and horizontal text. In vertical text the Sasayaki underline runs between the text and the furigana instead of through them. |
 | `0004-linux-desktop-file-dialog` | Uses your desktop's own file dialog (for example Dolphin on KDE) through xdg-desktop-portal when available. |
 | `0006-linux-sasayaki-transcription` | On-device Sasayaki transcription using sherpa-onnx and the ReazonSpeech model, plugged into upstream's transcription layer (the transcript is matched to the book by upstream's own aligner). |
 | `0007-linux-wayland-context-menu` | Right-click menus open at the pointer on Wayland. |

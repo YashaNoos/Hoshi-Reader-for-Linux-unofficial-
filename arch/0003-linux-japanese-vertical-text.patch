@@ -97,10 +97,10 @@ index 262d521..ac783ac 100644
      spacers = [];
      r.spacer = null;
 diff --git a/src/reader/reader.js b/src/reader/reader.js
-index 5b38f72..14fd7dc 100644
+index 5b38f72..db866b4 100644
 --- a/src/reader/reader.js
 +++ b/src/reader/reader.js
-@@ -28,6 +28,63 @@ window.hoshiReader = {
+@@ -28,6 +28,71 @@ window.hoshiReader = {
          const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
          return !!el?.closest('rt, rp');
      },
@@ -139,15 +139,23 @@ index 5b38f72..14fd7dc 100644
 +                ? 'translateX(calc(-1 * var(--hoshi-ruby-gap)))'
 +                : 'translateY(var(--hoshi-ruby-gap))'}; }`;
 +        if (!vertical) return ruby;
++        // The Sasayaki underline (text-underline-position: right) stays at the edge of
++        // that larger line box, which is where the furigana now are: move it halfway in,
++        // between the text and the furigana, as on Windows.
++        const underline = `
++            .hoshi-sasayaki-cue {
++                text-underline-offset: calc(-0.5 * var(--hoshi-ruby-ratio, 0) * 1em) !important;
++            }`;
 +        // WebKitGTK ignores a forced 'vert' here, but 'vrt2' (which includes the 'vert'
 +        // substitutions) works; Latin text is still rotated by WebKit as usual.
-+        return `${selector} { font-feature-settings: "vert" 1, "vrt2" 1 !important; }` + ruby;
++        return `${selector} { font-feature-settings: "vert" 1, "vrt2" 1 !important; }` + ruby + underline;
 +    },
 +
 +    fitRubyToEmBox(vertical) {
 +        if (!this.isWebKitGtk) return;
 +        document.fonts.ready.then(() => {
-+            const parent = document.querySelector('ruby')?.parentElement;
++            // Measured even without furigana: the Sasayaki underline uses the ratio too.
++            const parent = document.querySelector('ruby')?.parentElement ?? document.body;
 +            if (!parent) return;
 +            const probe = document.createElement('span');
 +            probe.textContent = '漢';
