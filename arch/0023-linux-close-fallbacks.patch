@@ -81,7 +81,7 @@ index 0000000..dc82e29
 +    });
 +}
 diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
-index 77d386a..5714829 100644
+index 4d8ee88..f128b74 100644
 --- a/src-tauri/src/lib.rs
 +++ b/src-tauri/src/lib.rs
 @@ -8,6 +8,8 @@ mod backup;
@@ -93,7 +93,7 @@ index 77d386a..5714829 100644
  mod context_menu;
  mod crash;
  mod css;
-@@ -224,6 +226,8 @@ pub fn run() {
+@@ -233,6 +235,8 @@ pub fn run() {
              let _window = builder.build()?;
              #[cfg(target_os = "linux")]
              wheel_pixels::install(&_window);
@@ -102,7 +102,7 @@ index 77d386a..5714829 100644
              #[cfg(windows)]
              media_controls::init(&_window).ok();
  
-@@ -233,6 +237,10 @@ pub fn run() {
+@@ -242,6 +246,10 @@ pub fn run() {
              Ok(())
          })
          .on_window_event(|_window, _event| {

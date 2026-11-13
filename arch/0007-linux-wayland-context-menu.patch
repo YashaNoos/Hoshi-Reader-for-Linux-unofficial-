@@ -1,8 +1,8 @@
 diff --git a/src-tauri/Cargo.lock b/src-tauri/Cargo.lock
-index baf6bd4..e311b1b 100644
+index fc17563..cd08f16 100644
 --- a/src-tauri/Cargo.lock
 +++ b/src-tauri/Cargo.lock
-@@ -1932,6 +1932,7 @@ dependencies = [
+@@ -1923,6 +1923,7 @@ dependencies = [
   "arboard",
   "base64 0.23.1",
   "chrono",
@@ -11,7 +11,7 @@ index baf6bd4..e311b1b 100644
   "image",
   "keyring-core",
 diff --git a/src-tauri/Cargo.toml b/src-tauri/Cargo.toml
-index f164549..7e73681 100644
+index 19b5a1c..f923001 100644
 --- a/src-tauri/Cargo.toml
 +++ b/src-tauri/Cargo.toml
 @@ -55,6 +55,8 @@ apple-native-keyring-store = { version = "1", features = ["keychain"] }
@@ -73,7 +73,7 @@ index 0000000..642ff36
 +    .map_err(|error| error.to_string())
 +}
 diff --git a/src-tauri/src/lib.rs b/src-tauri/src/lib.rs
-index 897e757..1c64046 100644
+index 65b45ed..20ac1fb 100644
 --- a/src-tauri/src/lib.rs
 +++ b/src-tauri/src/lib.rs
 @@ -5,6 +5,8 @@ mod anki;
@@ -85,7 +85,7 @@ index 897e757..1c64046 100644
  mod crash;
  mod css;
  mod dict;
-@@ -147,6 +149,8 @@ pub fn run() {
+@@ -155,6 +157,8 @@ pub fn run() {
              transcriber::sasayaki_clear_transcript,
              transcriber::sasayaki_pause_transcription,
              transcriber::sasayaki_transcribe,
@@ -94,19 +94,49 @@ index 897e757..1c64046 100644
              #[cfg(windows)]
              media_controls::media_controls_metadata,
              #[cfg(windows)]
+diff --git a/src/App.svelte b/src/App.svelte
+index b616524..8abe446 100644
+--- a/src/App.svelte
++++ b/src/App.svelte
+@@ -44,6 +44,7 @@
+   import { series } from "./lib/series";
+   import { loadSeries, renameSeries, seriesStore } from "./lib/seriesStore.svelte";
+   import { Menu } from "@tauri-apps/api/menu";
++  import { showContextMenu } from "./lib/contextMenu";
+   import { shellConfig } from "./lib/shellConfig.svelte";
+   import { configureSync, network } from "./lib/syncConfig.svelte";
+ 
+@@ -230,7 +231,7 @@
+         },
+       ],
+     });
+-    await menu.popup();
++    await showContextMenu(menu);
+   }
+ 
+   async function showShelfMenu(name: string, e: MouseEvent) {
+@@ -243,7 +244,7 @@
+         { id: `delete-shelf-${name}`, text: "Delete", action: () => manageShelves?.removeShelf(name) },
+       ],
+     });
+-    await menu.popup();
++    await showContextMenu(menu);
+   }
+ 
+   function saveSeriesName() {
 diff --git a/src/lib/Bookshelf.svelte b/src/lib/Bookshelf.svelte
-index 685851a..cc113a8 100644
+index 6afa4c2..5b0fc85 100644
 --- a/src/lib/Bookshelf.svelte
 +++ b/src/lib/Bookshelf.svelte
-@@ -6,6 +6,7 @@
+@@ -8,6 +8,7 @@
    import { invoke } from "@tauri-apps/api/core";
    import { listen } from "@tauri-apps/api/event";
    import { Menu, Submenu, type MenuOptions } from "@tauri-apps/api/menu";
 +  import { showContextMenu } from "./contextMenu";
    import { ask, message } from "@tauri-apps/plugin-dialog";
    import {
-     ArrowDown,
-@@ -187,7 +188,7 @@
+     Archive,
+@@ -249,7 +250,7 @@
  
    async function popupMenu(items: MenuOptions["items"]) {
      const menu = await Menu.new({ items });
@@ -137,7 +167,7 @@ index 18d644a..a773bcc 100644
        menuOpen = false;
      }
 diff --git a/src/lib/Reader.svelte b/src/lib/Reader.svelte
-index d430db3..19fbce4 100644
+index 7791b69..e886004 100644
 --- a/src/lib/Reader.svelte
 +++ b/src/lib/Reader.svelte
 @@ -3,6 +3,7 @@
@@ -148,7 +178,7 @@ index d430db3..19fbce4 100644
    import { getCurrentWindow } from "@tauri-apps/api/window";
    import { message, open, save } from "@tauri-apps/plugin-dialog";
    import {
-@@ -1119,7 +1120,7 @@
+@@ -1229,7 +1230,7 @@
          action: () => source.postMessage({ hoshi: "create-highlight", id: crypto.randomUUID().toUpperCase(), color }, "*"),
        })) },
      ] });

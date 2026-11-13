@@ -1,5 +1,5 @@
 diff --git a/src/reader/selection.js b/src/reader/selection.js
-index 66c1623..d7c81e6 100644
+index eefd501..10987d4 100644
 --- a/src/reader/selection.js
 +++ b/src/reader/selection.js
 @@ -96,34 +96,64 @@ const hoshiLookupOverlay = {

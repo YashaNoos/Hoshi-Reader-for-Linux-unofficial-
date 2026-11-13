@@ -1,8 +1,8 @@
 diff --git a/src/lib/Reader.svelte b/src/lib/Reader.svelte
-index 0bbef88..d430db3 100644
+index 221f569..7791b69 100644
 --- a/src/lib/Reader.svelte
 +++ b/src/lib/Reader.svelte
-@@ -1858,7 +1858,7 @@
+@@ -1979,7 +1979,7 @@
        {@const top = Math.round((frameHeight * effectivePadding(readerConfig.verticalPadding, readerConfig.maxHeight, frameHeight)) / 200)}
        {@const size = Math.max(11, Math.round(readerConfig.fontSize * 0.6))}
        {@const underButtons = macChrome && top + chromeInset / 2 - size / 2 < windowButtonsBottom}
@@ -68,10 +68,10 @@ index 9933c13..934428c 100644
    if (!legacy.showCharacters) readerConfig.progressCount = "Off";
    delete legacy.showCharacters;
 diff --git a/src/reader/boot.js b/src/reader/boot.js
-index 600280c..d38e2ed 100644
+index 262d521..ac783ac 100644
 --- a/src/reader/boot.js
 +++ b/src/reader/boot.js
-@@ -104,7 +104,7 @@
+@@ -124,7 +124,7 @@
          ${columns}
          column-fill: auto !important;
          -webkit-text-size-adjust: none !important;
@@ -80,7 +80,7 @@ index 600280c..d38e2ed 100644
          ${justify ? "" : "text-align: start !important; hanging-punctuation: allow-end !important; line-break: strict !important;"}
          ${advanced ? `line-height: ${lineHeight} !important; letter-spacing: ${charSpacing / 100}em !important;` : ""}
          padding: ${paddingY / 2}vh ${side} !important;
-@@ -112,6 +112,7 @@
+@@ -132,6 +132,7 @@
          ${overlap ? `padding-bottom: calc(${paddingY / 2}vh + ${overlap}px) !important;` : ""}
          ${fontSize ? `font-size: ${fontSize}px !important;` : ""}
        }
@@ -88,7 +88,7 @@ index 600280c..d38e2ed 100644
        ${avoidBreak ? "p { break-inside: avoid !important; -webkit-column-break-inside: avoid !important; }" : ""}
        ${
          advanced
-@@ -212,6 +213,7 @@
+@@ -273,6 +274,7 @@
        }
      `;
  
@@ -97,10 +97,10 @@ index 600280c..d38e2ed 100644
      spacers = [];
      r.spacer = null;
 diff --git a/src/reader/reader.js b/src/reader/reader.js
-index 0900bf2..5fa714f 100644
+index 5b38f72..14fd7dc 100644
 --- a/src/reader/reader.js
 +++ b/src/reader/reader.js
-@@ -24,6 +24,63 @@ window.hoshiReader = {
+@@ -28,6 +28,63 @@ window.hoshiReader = {
          const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
          return !!el?.closest('rt, rp');
      },
@@ -165,10 +165,10 @@ index 0900bf2..5fa714f 100644
      countChars(text) {
          return Array.from(this.normalizeText(text)).length;
 diff --git a/src/reader/scrollboot.js b/src/reader/scrollboot.js
-index 0a00465..4b88132 100644
+index 10094c2..971dfbd 100644
 --- a/src/reader/scrollboot.js
 +++ b/src/reader/scrollboot.js
-@@ -56,7 +56,7 @@
+@@ -58,7 +58,7 @@
          const writingMode = vertical ? 'vertical-rl' : 'horizontal-tb';
          const imgWidth = `calc(${100 - paddingX}vw - 1px)`;
          const imgHeight = `${100 - paddingY}vh`;
@@ -177,7 +177,7 @@ index 0a00465..4b88132 100644
          const furiganaLine = 'rgba(150, 150, 150, 0.75)';
  
          const contentSizeCss = vertical
-@@ -182,6 +182,7 @@
+@@ -185,6 +185,7 @@
              hoshi-html {
                  background: transparent !important;
              }
@@ -185,8 +185,8 @@ index 0a00465..4b88132 100644
              body, hoshi-body {
                  -webkit-text-size-adjust: none !important;
                  font-family: ${fontFamily} !important;
-@@ -272,6 +273,7 @@
-                 background-color: var(--hoshi-sasayaki-background-color) !important;
+@@ -280,6 +281,7 @@
+                 text-underline-position: under right !important;
              }
          `;
 +        reader.fitRubyToEmBox(vertical);

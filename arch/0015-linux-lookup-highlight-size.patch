@@ -1,5 +1,5 @@
 diff --git a/src/reader/selection.js b/src/reader/selection.js
-index cadc126..66c1623 100644
+index a7ec2e0..eefd501 100644
 --- a/src/reader/selection.js
 +++ b/src/reader/selection.js
 @@ -63,6 +63,84 @@ const JAPANESE_RANGES = [
